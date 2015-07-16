@@ -6,6 +6,7 @@ that are not possible with filters or gadgets in Jira web UI.
 Features:
 
 * sum time tracking information for the given JQL query
+* list epics, stories and tasks as Markdown-compatible nested lists for the given JQL query
 
 ## Installation
 
@@ -21,3 +22,4 @@ Features:
 ## Running
 
     ./ask-jira.py sum_timetracking_for_jql 'project = PROJ and sprint in openSprints()'
+    ./ask-jira.py list_epics_stories_and_tasks_for_jql 'project = PROJ and type = Epic'
