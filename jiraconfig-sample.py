@@ -1,3 +1,13 @@
-JIRA_SERVER = "https://example.com/jira/"
-JIRA_USER = "user"
-JIRA_PASSWORD = "password"
+JIRA = {
+    "server": "https://example.com/jira/",
+    "user": "user",
+    "password": "password"
+}
+
+# only used by export/import
+JIRA2 = {
+    "server": "https://example.com/jira2/",
+    "user": "user2",
+    "password": "password2"
+    "project": "PROJECTKEY",
+}
