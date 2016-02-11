@@ -24,9 +24,9 @@ def _make_jql_argument_parser(parser):
 # commands
 
 def projects(jira, args):
-    """List available Jira projects"""
+    """List available JIRA projects"""
     projects = jira.projects()
-    print("Available Jira projects:")
+    print("Available JIRA projects:")
     pprint.pprint([project.name for project in projects])
 
 def sum_timetracking_for_jql(jira, args):
@@ -46,13 +46,12 @@ def list_epics_stories_and_tasks_for_jql(jira, args):
 list_epics_stories_and_tasks_for_jql.argparser = _make_jql_argument_parser
 
 def export_import_issues_for_jql(jira1, args):
-    """Export issues from one Jira instance
+    """Export issues from one JIRA instance
     to another with comments and attachments"""
-    jira2 = JIRA({'server': conf.JIRA2['server']},
-                basic_auth=(conf.JIRA2['user'], conf.JIRA2['password']))
-    exported_issues = export_import.export_import_issues(jira1, jira2,
-            conf.JIRA2['project'], args.jql)
-    print(exported_issues)
+    import exportimportconfig
+    exported_issues = export_import.export_import_issues(jira1,
+            exportimportconfig, args.jql)
+    print('Successfully imported', exported_issues)
 
 export_import_issues_for_jql.argparser = _make_jql_argument_parser
 
@@ -75,14 +74,17 @@ def _make_main_argument_parser():
     return parser
 
 def _get_command(argparser):
+    def print_help_and_exit():
+        argparser.print_help()
+        sys.exit(1)
     if len(sys.argv) < 2:
-        argparser.print_help()
-        sys.exit(1)
+        print_help_and_exit()
     command = sys.argv[1]
+    if not command[0].isalpha():
+        print_help_and_exit()
     if command not in globals():
-        print("Invalid command: {0}\n".format(args.command), file=sys.stderr)
-        argparser.print_help()
-        sys.exit(1)
+        print("Invalid command: {0}\n".format(command), file=sys.stderr)
+        print_help_and_exit()
     command = globals()[command]
     return command
 
