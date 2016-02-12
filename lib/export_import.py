@@ -27,13 +27,13 @@ def _make_new_issues(jira1, jira2, issues, conf, result, parent):
         if not parent:
             print('to', new_issue.key, '...', end=' ')
 
-        _set_epic_link(issue, new_issue, conf, jira1, jira2)
+        _set_epic_link(new_issue, issue, conf, jira1, jira2)
 
         if issue.fields.comment.comments:
-            _add_comments(jira2, new_issue, issue.fields.comment.comments)
+            _add_comments(new_issue, jira2, issue.fields.comment.comments)
         if issue.fields.attachment:
             try:
-                _add_attachments(jira2, new_issue, issue.fields.attachment)
+                _add_attachments(new_issue, jira2, issue.fields.attachment)
             except JIRAError as e:
                 print('ERROR: attachment import failed with status',
                         e.status_code, '...', end=' ')
@@ -70,7 +70,7 @@ def _get_new_issue_fields(fields, conf):
 
 _g_epic_map = {}
 
-def _set_epic_link(old_issue, new_issue, conf, jira1, jira2):
+def _set_epic_link(new_issue, old_issue, conf, jira1, jira2):
     source_epic_key = getattr(old_issue.fields, conf.SOURCE_EPIC_LINK_FIELD_ID)
     if not source_epic_key:
         return
@@ -86,12 +86,12 @@ def _set_epic_link(old_issue, new_issue, conf, jira1, jira2):
     jira2.add_issues_to_epic(target_epic.key, [new_issue.key])
     print('linked to epic', target_epic.key, '...', end=' ')
 
-def _add_comments(jira, issue, comments):
+def _add_comments(issue, jira, comments):
     for comment in comments:
         jira.add_comment(issue, u"*Comment by {0}*:\n{1}"
                 .format(comment.author.displayName, comment.body))
 
-def _add_attachments(jira, issue, attachments):
+def _add_attachments(issue, jira, attachments):
     for attachment in attachments:
         with BytesIO() as buf:
             for chunk in attachment.iter_content():
@@ -101,10 +101,12 @@ def _add_attachments(jira, issue, attachments):
 
 # -------------------------------------
 # TODO:
-# - configurable maxResults
 # - more mappings from http://stackoverflow.com/a/26043914/258772
-# - components, fixVersions
+# - components, fixVersions (use create_version())
 # - estimates and timelogs
 # - jira1.add_comment("Exported to ...")
-# - keep original key? (optional, may collide in target project)
-# - comment authors map -- cannot change comment authors easily
+
+# Not doing:
+# - keep original key: JIRA does not support this
+# - comment authors map -- cannot change comment authors easily, Google for
+#   reasons
