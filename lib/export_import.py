@@ -28,6 +28,7 @@ def _make_new_issues(jira1, jira2, issues, conf, result, parent):
             print('to', new_issue.key, '...', end=' ')
 
         _set_epic_link(new_issue, issue, conf, jira1, jira2)
+        _set_status(new_issue, issue, conf, jira2)
 
         if issue.fields.comment.comments:
             _add_comments(new_issue, jira2, issue.fields.comment.comments)
@@ -37,6 +38,7 @@ def _make_new_issues(jira1, jira2, issues, conf, result, parent):
             except JIRAError as e:
                 print('ERROR: attachment import failed with status',
                         e.status_code, '...', end=' ')
+                jira2.add_comment(new_issue, '*Failed to import attachments*')
         if issue.fields.subtasks:
             subtasks = [jira1.issue(subtask.key) for subtask in
                     issue.fields.subtasks]
@@ -58,7 +60,7 @@ def _get_new_issue_fields(fields, conf):
         value = getattr(fields, name)
         if value is not None:
             result[name] = value
-    for name in ('priority', 'issuetype', 'assignee', 'reporter'): # 'status', -- cannot
+    for name in ('priority', 'issuetype', 'assignee', 'reporter'):
         value = getattr(fields, name)
         if value:
             value = getattr(value, 'name')
@@ -85,6 +87,17 @@ def _set_epic_link(new_issue, old_issue, conf, jira1, jira2):
     target_epic = _g_epic_map[source_epic_key]
     jira2.add_issues_to_epic(target_epic.key, [new_issue.key])
     print('linked to epic', target_epic.key, '...', end=' ')
+
+def _set_status(new_issue, old_issue, conf, jira2):
+    status_name = old_issue.fields.status.name
+    transitions = conf.STATUS_TRANSITIONS[status_name]
+    if not transitions:
+        return
+    for transition_name in transitions:
+        transition_id = jira2.find_transitionid_by_name(new_issue, transition_name)
+        if not transition_id:
+            raise RuntimeError('Invalid transition name: ' + transition_name)
+        jira2.transition_issue(new_issue, transition_id)
 
 def _add_comments(issue, jira, comments):
     for comment in comments:

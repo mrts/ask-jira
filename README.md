@@ -77,6 +77,7 @@ It needs special configuration in `exportimportconfig.py` (see sample in `export
 * `SOURCE_EPIC_LINK_FIELD_ID`: ID of the epic field in source JIRA, find it by calling `fields`, look for *Epic Link*
 * `SOURCE_EPIC_NAME_FIELD_ID`: ID of the epic field in source JIRA, find it by calling `fields`, look for *Epic Name*
 * `TARGET_EPIC_NAME_FIELD_ID`: ID of the epic field in **target** JIRA, find it by changing configuration to use target JIRA and calling `fields`, look for *Epic Name*
+* `STATUS_TRANSITIONS`: map of source JIRA statuses to list of workflow transition names in target JIRA that result in equivalent status, `None` for no transition
 * `CUSTOM_FIELD`: a single custom field that you can set to a default value for all issues (set to `None` if not needed)
 
 Note that epics and sub-tasks should be excluded from the source JIRA query as

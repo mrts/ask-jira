@@ -38,4 +38,13 @@ SOURCE_EPIC_LINK_FIELD_ID = 'customfield_10251'
 SOURCE_EPIC_NAME_FIELD_ID = 'customfield_10252'
 TARGET_EPIC_NAME_FIELD_ID = 'customfield_10009'
 
+STATUS_TRANSITIONS = {
+    'Open': None,
+    'Reopened': None,
+    'In Progress': ('Start work',),
+    'In Testing': ('Start work', 'Work done', 'Review passed'),
+    'Resolved': ('Start work', 'Work done', 'Review passed', 'Testing passed'),
+    'Closed': ('Start work', 'Work done', 'Review passed', 'Testing passed'),
+}
+
 CUSTOM_FIELD = ('customfield_11086', {'value': 'Custom value'})
