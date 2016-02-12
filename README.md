@@ -13,6 +13,8 @@ Features:
 
 * `projects`: List available JIRA projects (mainly for testing)
 
+* `fields`: List available JIRA field names and IDs
+
 * `sum_timetracking_for_jql`: Sum original estimate, time spent and time
   remaining for all issues that match the given JQL query
 
@@ -46,6 +48,7 @@ Here's the default help:
      command   the command to run, available commands:
                'export_import_issues_for_jql': Export issues from one JIRA instance
                  to another with comments and attachments
+               'fields': List available JIRA field names and IDs
                'list_epics_stories_and_tasks_for_jql': Print a Markdown-compatible tree of epics,
                  stories and subtasks that match the given JQL query
                'projects': List available JIRA projects

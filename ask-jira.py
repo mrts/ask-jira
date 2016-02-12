@@ -29,6 +29,11 @@ def projects(jira, args):
     print("Available JIRA projects:")
     pprint.pprint([project.name for project in projects])
 
+def fields(jira, args):
+    """List available JIRA field names and IDs"""
+    print("Available JIRA fields (name, id):")
+    pprint.pprint([(field['name'], field['id']) for field in jira.fields()])
+
 def sum_timetracking_for_jql(jira, args):
     """Sum original estimate, time spent
     and time remaining for all issues that match the given JQL query"""
