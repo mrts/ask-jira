@@ -7,7 +7,7 @@ from jira.exceptions import JIRAError
 def export_import_issues(export_jira, import_conf, query):
     import_jira = JIRA({'server': import_conf.JIRA['server']},
                 basic_auth=(import_conf.JIRA['user'], import_conf.JIRA['password']))
-    issues = export_jira.search_issues(query, maxResults=1000)
+    issues = export_jira.search_issues(query, maxResults=False)
     result = []
     print('About to export/import', len(issues), 'issues')
     _make_new_issues(export_jira, import_jira, issues, import_conf, result, None)
