@@ -14,6 +14,7 @@ PRIORITY_MAP = {
 }
 
 ISSUETYPE_MAP = {
+        'Epic': 'Epic',
         'Story': 'Story',
         'Improvement': 'Story',
         'New Feature': 'Story',
@@ -32,5 +33,9 @@ ASSIGNEE_MAP = {
 }
 
 REPORTER_MAP = ASSIGNEE_MAP
+
+SOURCE_EPIC_LINK_FIELD_ID = 'customfield_10251'
+SOURCE_EPIC_NAME_FIELD_ID = 'customfield_10252'
+TARGET_EPIC_NAME_FIELD_ID = 'customfield_10009'
 
 CUSTOM_FIELD = ('customfield_11086', {'value': 'Custom value'})

@@ -66,7 +66,7 @@ Here's the default help:
 ## Export/import
 
 The `export_import_issues_for_jql` task exports issues from one JIRA instance
-to another with comments and attachments.
+to another with comments, attachments, epics and sub-tasks.
 
 It needs special configuration in `exportimportconfig.py` (see sample in `exportimportconfig-sample.py`):
 
@@ -74,11 +74,14 @@ It needs special configuration in `exportimportconfig.py` (see sample in `export
 * `ISSUETYPE_MAP`: map source JIRA issue types to target issue types,  e.g. `'New Feature': 'Story'`
 * `ASSIGNEE_MAP`: map source JIRA assignees to target assignees
 * `REPORTER_MAP`: map source JIRA reporters to target reporters (usually identical to `ASSIGNEE_MAP`)
+* `SOURCE_EPIC_LINK_FIELD_ID`: ID of the epic field in source JIRA, find it by calling `fields`, look for *Epic Link*
+* `SOURCE_EPIC_NAME_FIELD_ID`: ID of the epic field in source JIRA, find it by calling `fields`, look for *Epic Name*
+* `TARGET_EPIC_NAME_FIELD_ID`: ID of the epic field in **target** JIRA, find it by changing configuration to use target JIRA and calling `fields`, look for *Epic Name*
 * `CUSTOM_FIELD`: a single custom field that you can set to a default value for all issues (set to `None` if not needed)
 
-Note that sub-tasks should be excluded from the query as they are automatically
-imported via the parent task. There is no proper support for epics either, so
-the recommended snippet to add to the query is:
+Note that epics and sub-tasks should be excluded from the source JIRA query as
+they are automatically imported via the parent task. The the recommended
+snippet to add to the query is:
 
     AND issuetype not in subTaskIssueTypes() AND issuetype != Epic
 

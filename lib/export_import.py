@@ -20,13 +20,14 @@ def _make_new_issues(jira1, jira2, issues, conf, result, parent):
         # re-fetch to include comments and attachments
         issue = jira1.issue(issue.key, expand='comments,attachments')
         fields = _get_new_issue_fields(issue.fields, conf)
-        fields['project'] = conf.JIRA['project']
         if parent:
             fields['parent'] = {'key': parent.key}
 
         new_issue = jira2.create_issue(fields=fields)
         if not parent:
             print('to', new_issue.key, '...', end=' ')
+
+        _set_epic_link(issue, new_issue, conf, jira1, jira2)
 
         if issue.fields.comment.comments:
             _add_comments(jira2, new_issue, issue.fields.comment.comments)
@@ -52,6 +53,7 @@ def _make_new_issues(jira1, jira2, issues, conf, result, parent):
 
 def _get_new_issue_fields(fields, conf):
     result = {}
+    result['project'] = conf.JIRA['project']
     for name in ('summary', 'description', 'labels'):
         value = getattr(fields, name)
         if value is not None:
@@ -65,6 +67,24 @@ def _get_new_issue_fields(fields, conf):
     if conf.CUSTOM_FIELD:
         result[conf.CUSTOM_FIELD[0]] = conf.CUSTOM_FIELD[1]
     return result
+
+_g_epic_map = {}
+
+def _set_epic_link(old_issue, new_issue, conf, jira1, jira2):
+    source_epic_key = getattr(old_issue.fields, conf.SOURCE_EPIC_LINK_FIELD_ID)
+    if not source_epic_key:
+        return
+    global _g_epic_map
+    if source_epic_key not in _g_epic_map:
+        source_epic = jira1.issue(source_epic_key)
+        epic_fields = _get_new_issue_fields(source_epic.fields, conf)
+        epic_fields[conf.TARGET_EPIC_NAME_FIELD_ID] = getattr(
+                source_epic.fields, conf.SOURCE_EPIC_NAME_FIELD_ID)
+        target_epic = jira2.create_issue(fields=epic_fields)
+        _g_epic_map[source_epic_key] = target_epic
+    target_epic = _g_epic_map[source_epic_key]
+    jira2.add_issues_to_epic(target_epic.key, [new_issue.key])
+    print('linked to epic', target_epic.key, '...', end=' ')
 
 def _add_comments(jira, issue, comments):
     for comment in comments:
