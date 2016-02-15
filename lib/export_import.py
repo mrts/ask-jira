@@ -48,6 +48,10 @@ def _make_new_issues(jira1, jira2, issues, conf, result, parent):
         comment = 'Imported from *[{1}|{0}/browse/{1}]*'.format(
                 jira1._options['server'], issue.key)
         jira2.add_comment(new_issue, comment)
+        if conf.ADD_COMMENT_TO_OLD_ISSUE:
+            comment = 'Exported to *[{1}|{0}/browse/{1}]*'.format(
+                    jira2._options['server'], new_issue.key)
+            jira1.add_comment(issue, comment)
 
         result.append(new_issue.key)
         if not parent:

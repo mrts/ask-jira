@@ -47,4 +47,6 @@ STATUS_TRANSITIONS = {
     'Closed': ('Start work', 'Work done', 'Review passed', 'Testing passed'),
 }
 
+ADD_COMMENT_TO_OLD_ISSUE = True
+
 CUSTOM_FIELD = ('customfield_11086', {'value': 'Custom value'})
