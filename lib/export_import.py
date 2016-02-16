@@ -98,10 +98,12 @@ def _set_status(new_issue, old_issue, conf, jira2):
     if not transitions:
         return
     for transition_name in transitions:
-        transition_id = jira2.find_transitionid_by_name(new_issue, transition_name)
-        if not transition_id:
-            raise RuntimeError('Invalid transition name: ' + transition_name)
-        jira2.transition_issue(new_issue, transition_id)
+        if isinstance(transition_name, conf.WithResolution):
+            resolution = conf.RESOLUTION_MAP[old_issue.fields.resolution.name]
+            jira2.transition_issue(new_issue, transition_name.transition_name,
+                    fields={'resolution': {'name': resolution}})
+        else:
+            jira2.transition_issue(new_issue, transition_name)
 
 def _add_comments(issue, jira, comments):
     for comment in comments:
@@ -121,7 +123,8 @@ def _add_attachments(issue, jira, attachments):
 # - more mappings from http://stackoverflow.com/a/26043914/258772
 # - components, fixVersions (use create_version())
 # - estimates and timelogs
-# - jira1.add_comment("Exported to ...")
+#   - tried, no luck, even though seems to have been working:
+#     https://answers.atlassian.com/questions/211138/defining-original-estimation-value-via-api
 
 # Not doing:
 # - keep original key: JIRA does not support this

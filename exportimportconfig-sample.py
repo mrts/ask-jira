@@ -1,3 +1,5 @@
+from collections import namedtuple
+
 JIRA2 = {
     "server": "https://example.com/jira2/",
     "user": "user2",
@@ -38,13 +40,35 @@ SOURCE_EPIC_LINK_FIELD_ID = 'customfield_10251'
 SOURCE_EPIC_NAME_FIELD_ID = 'customfield_10252'
 TARGET_EPIC_NAME_FIELD_ID = 'customfield_10009'
 
+WithResolution = namedtuple('WithResolution', 'transition_name')
+
+RESOLUTION_MAP = {
+    "Fixed": "Fixed",
+    "Won't Fix": "Won't Fix",
+    "Later": "Won't Fix'",
+    "Duplicate": "Duplicate",
+    "Incomplete": "Incomplete",
+    "Cannot Reproduce": "Cannot Reproduce",
+    "Fixed as is": "Fixed",
+    "Fixed with minor changes": "Fixed",
+    "Fixed with changes": "Fixed",
+    "Fixed quite differently": "Fixed",
+    "Released": "Done",
+    "Resolved": "Done",
+    "Verified": "Done",
+    "Unresolved": "Won't Fix",
+    "Done": "Done",
+}
+
 STATUS_TRANSITIONS = {
     'Open': None,
     'Reopened': None,
     'In Progress': ('Start work',),
     'In Testing': ('Start work', 'Work done', 'Review passed'),
-    'Resolved': ('Start work', 'Work done', 'Review passed', 'Testing passed'),
-    'Closed': ('Start work', 'Work done', 'Review passed', 'Testing passed'),
+    'Resolved': ('Start work', 'Work done', 'Review passed',
+        WithResolution('Testing passed')),
+    'Closed': ('Start work', 'Work done', 'Review passed',
+        WithResolution('Testing passed')),
 }
 
 ADD_COMMENT_TO_OLD_ISSUE = True
