@@ -1,4 +1,5 @@
 from __future__ import print_function
+from __future__ import unicode_literals
 
 import unicodedata
 from io import BytesIO
@@ -121,7 +122,8 @@ def _add_attachments(issue, jira, attachments):
                     attachment=buf)
 
 def _normalize_filename(value):
-    return unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
+    return unicodedata.normalize('NFKD', value).encode('ascii',
+            'ignore').decode('ascii')
 
 # -------------------------------------
 # TODO:
