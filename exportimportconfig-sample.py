@@ -1,10 +1,10 @@
 from collections import namedtuple
 
 JIRA2 = {
-    "server": "https://example.com/jira2/",
-    "user": "user2",
-    "password": "password2"
-    "project": "PROJECTKEY",
+    'server': 'https://example.com/jira2/',
+    'user': 'user2',
+    'password': 'password2',
+    'project': 'PROJECTKEY',
 }
 
 PRIORITY_MAP = {
@@ -43,21 +43,21 @@ TARGET_EPIC_NAME_FIELD_ID = 'customfield_10009'
 WithResolution = namedtuple('WithResolution', 'transition_name')
 
 RESOLUTION_MAP = {
-    "Fixed": "Fixed",
+    'Fixed': 'Fixed',
     "Won't Fix": "Won't Fix",
-    "Later": "Won't Fix'",
-    "Duplicate": "Duplicate",
-    "Incomplete": "Incomplete",
-    "Cannot Reproduce": "Cannot Reproduce",
-    "Fixed as is": "Fixed",
-    "Fixed with minor changes": "Fixed",
-    "Fixed with changes": "Fixed",
-    "Fixed quite differently": "Fixed",
-    "Released": "Done",
-    "Resolved": "Done",
-    "Verified": "Done",
-    "Unresolved": "Won't Fix",
-    "Done": "Done",
+    'Later': "Won't Fix",
+    'Duplicate': 'Duplicate',
+    'Incomplete': 'Incomplete',
+    'Cannot Reproduce': 'Cannot Reproduce',
+    'Fixed as is': 'Fixed',
+    'Fixed with minor changes': 'Fixed',
+    'Fixed with changes': 'Fixed',
+    'Fixed quite differently': 'Fixed',
+    'Released': 'Done',
+    'Resolved': 'Done',
+    'Verified': 'Done',
+    'Unresolved': "Won't Fix",
+    'Done': 'Done',
 }
 
 STATUS_TRANSITIONS = {

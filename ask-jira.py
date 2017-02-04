@@ -94,7 +94,7 @@ def _get_command(argparser):
     return command
 
 def _list_local_commands():
-    sorted_globals = globals().items()
+    sorted_globals = list(globals().items())
     sorted_globals.sort()
     commands = [(var, obj.__doc__) for var, obj in sorted_globals
         if not var.startswith('_')

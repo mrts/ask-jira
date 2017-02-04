@@ -1,7 +1,7 @@
 class WorkdaysFromSeconds(object):
     def __init__(self, seconds):
         self.seconds = seconds
-        self._hours = seconds / (60.0 * 60)
+        self._hours = seconds // (60.0 * 60)
         self._days, self._day_hours = divmod(self._hours, 8)
 
     def __sub__(self, other):
