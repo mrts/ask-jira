@@ -60,7 +60,9 @@ Here's the default help:
 
 ## Examples
 
-    ./ask-jira.py sum_timetracking_for_jql 'project = PROJ and sprint in openSprints()'
+    # current sprint velocity
+    ./ask-jira.py sum_timetracking_for_jql 'project = PROJ and sprint in openSprints() and status = Closed'
+
     ./ask-jira.py list_epics_stories_and_tasks_for_jql 'project = PROJ and type = Epic'
 
 ## Export/import
