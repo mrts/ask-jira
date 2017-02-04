@@ -70,6 +70,7 @@ to another with comments, attachments, epics and sub-tasks.
 
 It needs special configuration in `exportimportconfig.py` (see sample in `exportimportconfig-sample.py`):
 
+* `JIRA`: the source JIRA server configuration where the issues are imported from
 * `PRIORITY_MAP`: map source JIRA priorities to target priorities, e.g. `'Major': 'Medium'`
 * `ISSUETYPE_MAP`: map source JIRA issue types to target issue types,  e.g. `'New Feature': 'Story'`
 * `ASSIGNEE_MAP`: map source JIRA assignees to target assignees
