@@ -1,6 +1,6 @@
 from collections import namedtuple
 
-JIRA2 = {
+JIRA = {
     'server': 'https://example.com/jira2/',
     'user': 'user2',
     'password': 'password2',
