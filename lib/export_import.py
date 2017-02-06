@@ -1,5 +1,7 @@
 from __future__ import print_function
+from __future__ import unicode_literals
 
+import unicodedata
 from io import BytesIO
 from jira.client import JIRA
 from jira.exceptions import JIRAError
@@ -115,8 +117,13 @@ def _add_attachments(issue, jira, attachments):
         with BytesIO() as buf:
             for chunk in attachment.iter_content():
                 buf.write(chunk)
-            jira.add_attachment(issue, filename=attachment.filename,
+            jira.add_attachment(issue,
+                    filename=_normalize_filename(attachment.filename),
                     attachment=buf)
+
+def _normalize_filename(value):
+    return unicodedata.normalize('NFKD', value).encode('ascii',
+            'ignore').decode('ascii')
 
 # -------------------------------------
 # TODO:
