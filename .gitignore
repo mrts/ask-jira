@@ -2,4 +2,5 @@
 *.swp
 jiraconfig.py
 exportimportconfig.py
+worklogconfig.py
 venv/

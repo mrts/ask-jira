@@ -11,6 +11,7 @@ from jira.client import JIRA
 from lib import timetracking
 from lib import subissues
 from lib import export_import
+from lib import google_calendar
 from utils.smart_argparse_formatter import SmartFormatter
 
 import jiraconfig as conf
@@ -59,6 +60,25 @@ def export_import_issues_for_jql(jira1, args):
     print('Successfully imported', exported_issues)
 
 export_import_issues_for_jql.argparser = _make_jql_argument_parser
+
+def import_worklogs_from_google_calendar(jira, args):
+    """Import worklog entries from Google Calendar
+    to corresponding JIRA tasks"""
+    import worklogconfig
+    hours = google_calendar.import_worklogs(jira, worklogconfig,
+            args.calendar, args.fromdate, args.todate)
+    print('Successfully logged', hours, 'hours')
+
+def _import_worklogs_argument_parser(parser):
+    parser.add_argument("calendar", help="the calendar name to import "
+            "worklogs from")
+    parser.add_argument("fromdate", help="import date range start, "
+            "in yyyy-mm-dd format")
+    parser.add_argument("todate", help="import date range end, "
+            "in yyyy-mm-dd format")
+    return parser
+
+import_worklogs_from_google_calendar.argparser = _import_worklogs_argument_parser
 
 # main
 

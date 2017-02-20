@@ -18,6 +18,9 @@ Features:
 * `sum_timetracking_for_jql`: Sum original estimate, time spent and time
   remaining for all issues that match the given JQL query
 
+* `import_worklogs_from_google_calendar`: Import worklog entries from Google
+  Calendar to corresponding JIRA tasks
+
 ## Installation
 
     git clone https://github.com/mrts/ask-jira.git
