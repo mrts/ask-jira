@@ -52,6 +52,8 @@ Here's the default help:
                'export_import_issues_for_jql': Export issues from one JIRA instance
                  to another with comments and attachments
                'fields': List available JIRA field names and IDs
+               'import_worklogs_from_google_calendar': Import worklog entries from Google Calendar
+                 to corresponding JIRA tasks
                'list_epics_stories_and_tasks_for_jql': Print a Markdown-compatible tree of epics,
                  stories and subtasks that match the given JQL query
                'projects': List available JIRA projects
@@ -100,3 +102,36 @@ Full example:
         AND status not in (Closed, Done, Fixed, Resolved)
         AND issuetype not in subTaskIssueTypes()
         AND issuetype != Epic'
+
+## Importing worklogs from Google Calendar
+
+The `import_worklogs_from_google_calendar` task helps filling JIRA time reports
+from Google Calendar events. The Google Calendar events must be formatted
+according to *JIRA-ID: comment* convention, where *JIRA-ID* is the JIRA issue
+ID and *comment* is the comment to add to the worklog. The comment is optional.
+The script finds the corresponding JIRA issue by ID and adds a worklog with the
+event duration to it.
+
+It needs special configuration in `worklogconfig.py` (see sample in
+`worklogconfig-sample.py`, you probably need to change the Google Calendar
+timezone in `TIMEZONE` and can keep the rest as-is).
+
+You also need to setup API access to Google Calendar in Google Developers
+Console as explained [here](https://developers.google.com/google-apps/calendar/quickstart/python#step_1_turn_on_the_api_name).
+
+### Usage
+
+Usage:
+
+    ./ask-jira.py import_worklogs_from_google_calendar -h
+    usage: ask-jira.py [-h] command calendar fromdate todate
+
+    positional arguments:
+      command     import_worklogs_from_google_calendar
+      calendar    the calendar name to import worklogs from
+      fromdate    import date range start, in yyyy-mm-dd format
+      todate      import date range end, in yyyy-mm-dd format
+
+Full example:
+
+    ./ask-jira.py import_worklogs_from_google_calendar 'Timereport' 2017-02-23 2017-02-24

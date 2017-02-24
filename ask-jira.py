@@ -83,9 +83,8 @@ import_worklogs_from_google_calendar.argparser = _import_worklogs_argument_parse
 # main
 
 def _main():
-    argparser = _make_main_argument_parser()
-    command = _get_command(argparser)
-    args = _parse_command_specific_arguments(command, argparser)
+    command_name, command = _get_command()
+    args = _parse_command_specific_arguments(command_name, command)
     jira = JIRA({'server': conf.JIRA['server']},
                 basic_auth=(conf.JIRA['user'], conf.JIRA['password']))
     command(jira, args)
@@ -98,20 +97,21 @@ def _make_main_argument_parser():
             "commands:\n{0}".format(_list_local_commands()))
     return parser
 
-def _get_command(argparser):
+def _get_command():
+    argparser = _make_main_argument_parser()
     def print_help_and_exit():
         argparser.print_help()
         sys.exit(1)
     if len(sys.argv) < 2:
         print_help_and_exit()
-    command = sys.argv[1]
-    if not command[0].isalpha():
+    command_name = sys.argv[1]
+    if not command_name[0].isalpha():
         print_help_and_exit()
-    if command not in globals():
-        print("Invalid command: {0}\n".format(command), file=sys.stderr)
+    if command_name not in globals():
+        print("Invalid command: {0}\n".format(command_name), file=sys.stderr)
         print_help_and_exit()
-    command = globals()[command]
-    return command
+    command = globals()[command_name]
+    return command_name, command
 
 def _list_local_commands():
     sorted_globals = list(globals().items())
@@ -121,11 +121,13 @@ def _list_local_commands():
            and inspect.isfunction(obj)]
     return "\n".join("'{0}': {1}".format(name, doc) for name, doc in commands)
 
-def _parse_command_specific_arguments(command, argparser):
-    if hasattr(command, 'argparser'):
-        command_argparser = command.argparser(argparser)
-        return command_argparser.parse_args()
-    return None
+def _parse_command_specific_arguments(command_name, command):
+    if not hasattr(command, 'argparser'):
+        return None
+    parser = argparse.ArgumentParser()
+    parser.add_argument("command", help=command_name)
+    command_argparser = command.argparser(parser)
+    return command_argparser.parse_args()
 
 if __name__ == "__main__":
     _main()
