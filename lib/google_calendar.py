@@ -56,7 +56,7 @@ def import_worklogs(jira, worklogconfig, calendar_name, from_day, to_day):
                         started=gcal_worklog.start, comment=gcal_worklog.comment)
                 durations.append(gcal_worklog.duration)
         except JIRAError as e:
-            print("Issue '" + issue + "' does not exist (or other JIRA error):", e)
+            print("Issue '" + gcal_worklog.issue + "' does not exist (or other JIRA error):", e)
 
     return sum(durations, datetime.timedelta(0))
 
@@ -68,8 +68,8 @@ class Worklog(object):
         end = _parse_iso_date(event['end'].get('dateTime'))
         duration = end - start
         summary = event['summary'].split(':', 1)
-        issue = summary[0]
-        comment = summary[1] if len(summary) > 1 else ''
+        issue = summary[0].strip()
+        comment = summary[1].strip() if len(summary) > 1 else ''
         return Worklog(start, duration, issue, comment)
 
     @staticmethod
