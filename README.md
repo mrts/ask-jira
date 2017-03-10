@@ -36,6 +36,8 @@ Features:
 
     ./ask-jira.py projects # for testing, will print available projects
 
+JIRA server configuration is picked up from `jiraconfig.py`.
+
 ## Usage
 
 Run the command with 
@@ -75,7 +77,7 @@ Here's the default help:
 The `export_import_issues_for_jql` task exports issues from one JIRA instance
 to another with comments, attachments, epics and sub-tasks.
 
-Source JIRA configuration is picked up from `jiraconfig.py`.
+Source JIRA server configuration is picked up from `jiraconfig.py`.
 
 The task needs special configuration in `exportimportconfig.py` (see sample in
 `exportimportconfig-sample.py`):
