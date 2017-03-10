@@ -6,54 +6,54 @@ from io import BytesIO
 from jira.client import JIRA
 from jira.exceptions import JIRAError
 
-def export_import_issues(export_jira, import_conf, query):
-    import_jira = JIRA({'server': import_conf.JIRA['server']},
-                basic_auth=(import_conf.JIRA['user'], import_conf.JIRA['password']))
-    issues = export_jira.search_issues(query, maxResults=False)
+def export_import_issues(source_jira, conf, query):
+    target_jira = JIRA({'server': conf.JIRA['server']},
+                basic_auth=(conf.JIRA['user'], conf.JIRA['password']))
+    issues = source_jira.search_issues(query, maxResults=False)
     result = []
     print('About to export/import', len(issues), 'issues')
-    _make_new_issues(export_jira, import_jira, issues, import_conf, result, None)
+    _make_new_issues(source_jira, target_jira, issues, conf, result, None)
     return result
 
-def _make_new_issues(jira1, jira2, issues, conf, result, parent):
+def _make_new_issues(source_jira, target_jira, issues, conf, result, parent):
     for issue in issues:
         if not parent:
             print('Exporting', issue.key, end=' ')
         # re-fetch to include comments and attachments
-        issue = jira1.issue(issue.key, expand='comments,attachments')
+        issue = source_jira.issue(issue.key, expand='comments,attachments')
         fields = _get_new_issue_fields(issue.fields, conf)
         if parent:
             fields['parent'] = {'key': parent.key}
 
-        new_issue = jira2.create_issue(fields=fields)
+        new_issue = target_jira.create_issue(fields=fields)
         if not parent:
             print('to', new_issue.key, '...', end=' ')
 
-        _set_epic_link(new_issue, issue, conf, jira1, jira2)
-        _set_status(new_issue, issue, conf, jira2)
+        _set_epic_link(new_issue, issue, conf, source_jira, target_jira)
+        _set_status(new_issue, issue, conf, target_jira)
 
         if issue.fields.comment.comments:
-            _add_comments(new_issue, jira2, issue.fields.comment.comments)
+            _add_comments(new_issue, target_jira, issue.fields.comment.comments)
         if issue.fields.attachment:
             try:
-                _add_attachments(new_issue, jira2, issue.fields.attachment)
+                _add_attachments(new_issue, target_jira, issue.fields.attachment)
             except JIRAError as e:
                 print('ERROR: attachment import failed with status',
                         e.status_code, '...', end=' ')
-                jira2.add_comment(new_issue, '*Failed to import attachments*')
+                target_jira.add_comment(new_issue, '*Failed to import attachments*')
         if issue.fields.subtasks:
-            subtasks = [jira1.issue(subtask.key) for subtask in
+            subtasks = [source_jira.issue(subtask.key) for subtask in
                     issue.fields.subtasks]
             print('with', len(subtasks), 'subtasks ...', end=' ')
-            _make_new_issues(jira1, jira2, subtasks, conf, result, new_issue)
+            _make_new_issues(source_jira, target_jira, subtasks, conf, result, new_issue)
 
         comment = 'Imported from *[{1}|{0}/browse/{1}]*'.format(
-                jira1._options['server'], issue.key)
-        jira2.add_comment(new_issue, comment)
+                source_jira._options['server'], issue.key)
+        target_jira.add_comment(new_issue, comment)
         if conf.ADD_COMMENT_TO_OLD_ISSUE:
             comment = 'Exported to *[{1}|{0}/browse/{1}]*'.format(
-                    jira2._options['server'], new_issue.key)
-            jira1.add_comment(issue, comment)
+                    target_jira._options['server'], new_issue.key)
+            source_jira.add_comment(issue, comment)
 
         result.append(new_issue.key)
         if not parent:
@@ -78,23 +78,23 @@ def _get_new_issue_fields(fields, conf):
 
 _g_epic_map = {}
 
-def _set_epic_link(new_issue, old_issue, conf, jira1, jira2):
+def _set_epic_link(new_issue, old_issue, conf, source_jira, target_jira):
     source_epic_key = getattr(old_issue.fields, conf.SOURCE_EPIC_LINK_FIELD_ID)
     if not source_epic_key:
         return
     global _g_epic_map
     if source_epic_key not in _g_epic_map:
-        source_epic = jira1.issue(source_epic_key)
+        source_epic = source_jira.issue(source_epic_key)
         epic_fields = _get_new_issue_fields(source_epic.fields, conf)
         epic_fields[conf.TARGET_EPIC_NAME_FIELD_ID] = getattr(
                 source_epic.fields, conf.SOURCE_EPIC_NAME_FIELD_ID)
-        target_epic = jira2.create_issue(fields=epic_fields)
+        target_epic = target_jira.create_issue(fields=epic_fields)
         _g_epic_map[source_epic_key] = target_epic
     target_epic = _g_epic_map[source_epic_key]
-    jira2.add_issues_to_epic(target_epic.key, [new_issue.key])
+    target_jira.add_issues_to_epic(target_epic.key, [new_issue.key])
     print('linked to epic', target_epic.key, '...', end=' ')
 
-def _set_status(new_issue, old_issue, conf, jira2):
+def _set_status(new_issue, old_issue, conf, target_jira):
     status_name = old_issue.fields.status.name
     transitions = conf.STATUS_TRANSITIONS[status_name]
     if not transitions:
@@ -102,10 +102,10 @@ def _set_status(new_issue, old_issue, conf, jira2):
     for transition_name in transitions:
         if isinstance(transition_name, conf.WithResolution):
             resolution = conf.RESOLUTION_MAP[old_issue.fields.resolution.name]
-            jira2.transition_issue(new_issue, transition_name.transition_name,
+            target_jira.transition_issue(new_issue, transition_name.transition_name,
                     fields={'resolution': {'name': resolution}})
         else:
-            jira2.transition_issue(new_issue, transition_name)
+            target_jira.transition_issue(new_issue, transition_name)
 
 def _add_comments(issue, jira, comments):
     for comment in comments:

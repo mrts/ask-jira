@@ -51,11 +51,11 @@ def list_epics_stories_and_tasks_for_jql(jira, args):
 
 list_epics_stories_and_tasks_for_jql.argparser = _make_jql_argument_parser
 
-def export_import_issues_for_jql(jira1, args):
+def export_import_issues_for_jql(jira, args):
     """Export issues from one JIRA instance
     to another with comments and attachments"""
     import exportimportconfig
-    exported_issues = export_import.export_import_issues(jira1,
+    exported_issues = export_import.export_import_issues(jira,
             exportimportconfig, args.jql)
     print('Successfully imported', exported_issues)
 
