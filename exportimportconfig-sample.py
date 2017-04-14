@@ -34,6 +34,8 @@ ASSIGNEE_MAP = {
         'userb': 'user2',
 }
 
+DEFAULT_ASSIGNEE = 'user3'
+
 REPORTER_MAP = ASSIGNEE_MAP
 
 SOURCE_EPIC_LINK_FIELD_ID = 'customfield_10251'

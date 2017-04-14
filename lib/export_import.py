@@ -127,7 +127,15 @@ def _get_new_issue_fields(fields, conf):
         if value:
             value = getattr(value, 'name')
             name_map = getattr(conf, name.upper() + '_MAP')
-            result[name] = {'name': name_map[value]}
+            if value in name_map:
+                result[name] = {'name': name_map[value]}
+            else:
+                try:
+                    default = getattr(conf, 'DEFAULT_' + name.upper())
+                    result[name] = default
+                except AttributeError:
+                    raise AttributeError("Failed to find '%s' in %s_MAP "
+                            'and no default exists', (value, name.upper()))
     if conf.CUSTOM_FIELD:
         result[conf.CUSTOM_FIELD[0]] = conf.CUSTOM_FIELD[1]
     if conf.CUSTOM_FIELD_MAP:
