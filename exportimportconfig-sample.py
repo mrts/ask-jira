@@ -15,6 +15,8 @@ PRIORITY_MAP = {
         'Trivial': 'Trivial',
 }
 
+DEFAULT_PRIORITY = 'Major'
+
 ISSUETYPE_MAP = {
         'Epic': 'Epic',
         'Story': 'Story',
@@ -29,6 +31,8 @@ ISSUETYPE_MAP = {
         'Technical task': 'Sub-task',
 }
 
+DEFAULT_ISSUETYPE = 'Task'
+
 ASSIGNEE_MAP = {
         'usera': 'user1',
         'userb': 'user2',
@@ -37,6 +41,8 @@ ASSIGNEE_MAP = {
 DEFAULT_ASSIGNEE = 'user3'
 
 REPORTER_MAP = ASSIGNEE_MAP
+
+DEFAULT_REPORTER = DEFAULT_ASSIGNEE
 
 SOURCE_EPIC_LINK_FIELD_ID = 'customfield_10251'
 SOURCE_EPIC_NAME_FIELD_ID = 'customfield_10252'
