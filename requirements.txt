@@ -1,1 +1,3 @@
 jira
+google-api-python-client
+python-dateutil
