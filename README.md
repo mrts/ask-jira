@@ -123,6 +123,8 @@ timezone in `TIMEZONE` and can keep the rest as-is).
 
 You also need to setup API access to Google Calendar in Google Developers
 Console as explained [here](https://developers.google.com/google-apps/calendar/quickstart/python#step_1_turn_on_the_api_name).
+Be sure to download the OAuth client secret as instructed and save it to
+`~/.credentials/client_secret.json`.
 
 ### Usage
 
