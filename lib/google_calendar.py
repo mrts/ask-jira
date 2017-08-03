@@ -1,5 +1,6 @@
 from __future__ import print_function
 import httplib2
+import re
 import os
 import sys
 import datetime
@@ -60,6 +61,8 @@ def import_worklogs(jira, worklogconfig, calendar_name, from_day, to_day):
 
     return sum(durations, datetime.timedelta(0))
 
+JIRA_ISSUE_REGEX = re.compile('[A-Z]+-\d+')
+
 @total_ordering
 class Worklog(object):
     @staticmethod
@@ -67,8 +70,12 @@ class Worklog(object):
         start = _parse_iso_date(event['start'].get('dateTime'))
         end = _parse_iso_date(event['end'].get('dateTime'))
         duration = end - start
+        summary = event['summary']
         summary = event['summary'].split(':', 1)
         issue = summary[0].strip()
+        if not JIRA_ISSUE_REGEX.match(issue):
+            raise RuntimeError("'%s' is not a JIRA issue ID" %
+                    issue.encode('utf-8'))
         comment = summary[1].strip() if len(summary) > 1 else ''
         return Worklog(start, duration, issue, comment)
 
