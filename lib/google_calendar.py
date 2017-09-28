@@ -112,6 +112,8 @@ def _get_calendar_id(service, calendar_name):
     calendars = service.calendarList().list().execute().get('items', [])
     calendarId = next((c['id'] for c in calendars
         if c['summary'] == calendar_name), None)
+    if calendarId is None:
+        raise RuntimeError("Calendar '%s' not found" % calendar_name)
     return calendarId
 
 def _parse_iso_date(datestr):
