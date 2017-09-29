@@ -85,7 +85,7 @@ import_worklogs_from_google_calendar.argparser = _import_worklogs_argument_parse
 def _main():
     command_name, command = _get_command()
     args = _parse_command_specific_arguments(command_name, command)
-    jira = JIRA({'server': conf.JIRA['server']},
+    jira = JIRA({'server': conf.JIRA['server']}, # add 'verify': False if HTTPS cert is untrusted
                 basic_auth=(conf.JIRA['user'], conf.JIRA['password']))
     command(jira, args)
 
