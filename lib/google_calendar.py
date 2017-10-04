@@ -21,6 +21,10 @@ def import_worklogs(jira, worklogconfig, calendar_name, from_day, to_day):
     Calendar entries must start with JIRA issue IDs opitionally followed by
     ':' and comments. Returns total hours logged as timedelta.
     """
+    if from_day >= to_day:
+        print('Start date must be before end date, start:', from_day, 'end:', to_day)
+        return 0
+
     from_day = _convert_to_datestring(from_day, worklogconfig)
     to_day = _convert_to_datestring(to_day, worklogconfig)
     service = _get_calendar_service(worklogconfig)
