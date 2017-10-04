@@ -15,6 +15,10 @@ from oauth2client import client
 from oauth2client import tools
 from oauth2client.file import Storage
 
+
+class WorklogParseError(RuntimeError):
+    pass
+
 def import_worklogs(jira, worklogconfig, calendar_name, from_day, to_day):
     """
     Imports worklogs using the Google Calendar API and sumbits them to JIRA.
@@ -40,13 +44,13 @@ def import_worklogs(jira, worklogconfig, calendar_name, from_day, to_day):
 
     durations = []
     for event in events:
-        gcal_worklog = Worklog.from_gcal(event)
         try:
+            gcal_worklog = Worklog.from_gcal(event)
             jira_worklogs = [Worklog.from_jira(w) for w in jira.worklogs(gcal_worklog.issue)]
             if (jira_worklogs and gcal_worklog in jira_worklogs):
                 jira_worklog = next(w for w in jira_worklogs if w == gcal_worklog)
                 if gcal_worklog.duration != jira_worklog.duration:
-                    raise RuntimeError('Google worklog for issue %s '
+                    raise WorklogParseError('Google worklog for issue %s '
                             'starting at %s: duration %s differs from JIRA duration %s'
                             % (gcal_worklog.issue, gcal_worklog.start,
                                 gcal_worklog.duration, jira_worklog.duration))
@@ -60,6 +64,8 @@ def import_worklogs(jira, worklogconfig, calendar_name, from_day, to_day):
                         timeSpentSeconds=gcal_worklog.duration.seconds,
                         started=gcal_worklog.start, comment=gcal_worklog.comment)
                 durations.append(gcal_worklog.duration)
+        except WorklogParseError as e:
+            print(e)
         except JIRAError as e:
             print("Issue '" + gcal_worklog.issue + "' does not exist (or other JIRA error):", e)
 
@@ -78,7 +84,7 @@ class Worklog(object):
         summary = event['summary'].split(':', 1)
         issue = summary[0].strip()
         if not JIRA_ISSUE_REGEX.match(issue):
-            raise RuntimeError("'%s' is not a JIRA issue ID" %
+            raise WorklogParseError("'%s' is not a JIRA issue ID" %
                     issue.encode('utf-8'))
         comment = summary[1].strip() if len(summary) > 1 else ''
         return Worklog(start, duration, issue, comment)

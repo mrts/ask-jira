@@ -67,7 +67,7 @@ def import_worklogs_from_google_calendar(jira, args):
     import worklogconfig
     hours = google_calendar.import_worklogs(jira, worklogconfig,
             args.calendar, args.fromdate, args.todate)
-    print('Successfully logged', hours, 'hours')
+    print('Logged', hours, 'hours')
 
 def _import_worklogs_argument_parser(parser):
     parser.add_argument("calendar", help="the calendar name to import "
