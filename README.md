@@ -28,7 +28,7 @@ Features:
     cd ask-jira
 
     virtualenv venv
-    . venv/scripts/activate # or venv/bin/activate in non-Windows
+    venv\scripts\activate # or venv/bin/activate in non-Windows
     pip install --requirement=requirements.txt
 
     cp jiraconfig-sample.py jiraconfig.py
