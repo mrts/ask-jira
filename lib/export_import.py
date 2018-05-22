@@ -32,6 +32,10 @@ def _make_new_issues(source_jira, target_jira, issues, conf, result, parent):
         _set_epic_link(new_issue, issue, conf, source_jira, target_jira)
         _set_status(new_issue, issue, conf, target_jira)
 
+        if issue.fields.worklog:
+            for worklog in issue.fields.worklog.worklogs:
+                target_jira.add_worklog(new_issue, worklog.timeSpent)
+
         if issue.fields.comment.comments:
             _add_comments(new_issue, target_jira, issue.fields.comment.comments)
         if issue.fields.attachment:
