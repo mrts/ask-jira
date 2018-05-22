@@ -49,7 +49,7 @@ def _make_new_issues(source_jira, target_jira, issues, conf, result, parent):
 
         if issue.fields.worklog:
             for worklog in issue.fields.worklog.worklogs:
-                target_jira.add_worklog(new_issue, worklog.timeSpent)
+                target_jira.add_worklog(new_issue, None, worklog.timeSpentSeconds)
 
         if issue.fields.comment.comments:
             _add_comments(new_issue, target_jira, issue.fields.comment.comments)
