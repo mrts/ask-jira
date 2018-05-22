@@ -25,6 +25,21 @@ def _make_new_issues(source_jira, target_jira, issues, conf, result, parent):
         if parent:
             fields['parent'] = {'key': parent.key}
 
+        # Migrate issue version.
+        source_versions = getattr(issue.fields, 'fixVersions')
+        if source_versions is not None:
+            target_versions = []
+            for version in source_versions:
+                # We create the current version if it does not exist in the target JIRA project.
+                target_version = _get_target_version_by_name(target_jira, conf, getattr(version, 'name'))
+                if target_version is None:
+                    target_version = target_jira.create_version(getattr(version, 'name'), conf.JIRA['project'])
+
+                target_versions.append({'id': getattr(target_version, 'id')})
+
+            # Support multiple versions per ticket.
+            fields['fixVersions'] = target_versions
+
         new_issue = target_jira.create_issue(fields=fields)
         if not parent:
             print('to', new_issue.key, '...', end=' ')
@@ -62,6 +77,23 @@ def _make_new_issues(source_jira, target_jira, issues, conf, result, parent):
         result.append(new_issue.key)
         if not parent:
             print('done')
+
+
+def _get_target_version_by_name(jira, conf, name):
+    """
+    Get an existing version by name for the current project.
+
+    :param jira: current jira resource
+    :param conf: JIRA configurations
+    :param name: name of the version to check
+    """
+    versions = jira.project_versions(conf.JIRA['project'])
+    for version in versions:
+        if getattr(version, 'name') == name:
+            return version
+
+    return None
+
 
 def _get_new_issue_fields(fields, conf):
     result = {}
