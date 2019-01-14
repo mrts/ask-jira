@@ -1,6 +1,7 @@
 import os
 
 TIMEZONE = '+02'
+JIRA_TIMEZONE = 'Europe/Tallinn'
 
 HOME_DIR = os.path.expanduser('~')
 CREDENTIAL_DIR = os.path.join(HOME_DIR, '.credentials')

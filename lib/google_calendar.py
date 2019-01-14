@@ -7,6 +7,7 @@ import datetime
 from functools import total_ordering
 
 import dateutil.parser
+import pytz
 
 from jira.exceptions import JIRAError
 
@@ -18,6 +19,7 @@ from oauth2client.file import Storage
 
 class WorklogParseError(RuntimeError):
     pass
+
 
 def import_worklogs(jira, worklogconfig, calendar_name, from_day, to_day):
     """
@@ -35,7 +37,7 @@ def import_worklogs(jira, worklogconfig, calendar_name, from_day, to_day):
     calendarId = _get_calendar_id(service, calendar_name)
 
     eventsResult = service.events().list(calendarId=calendarId, timeMin=from_day, timeMax=to_day,
-            maxResults=1000, singleEvents=True, orderBy='startTime').execute()
+                                         maxResults=1000, singleEvents=True, orderBy='startTime').execute()
     events = eventsResult.get('items', [])
 
     if not events:
@@ -51,18 +53,21 @@ def import_worklogs(jira, worklogconfig, calendar_name, from_day, to_day):
                 jira_worklog = next(w for w in jira_worklogs if w == gcal_worklog)
                 if gcal_worklog.duration != jira_worklog.duration:
                     raise WorklogParseError('Google worklog for issue %s '
-                            'starting at %s: duration %s differs from JIRA duration %s'
-                            % (gcal_worklog.issue, gcal_worklog.start,
-                                gcal_worklog.duration, jira_worklog.duration))
-                print(gcal_worklog.duration, 'hours starting',
-                        gcal_worklog.start, 'already logged for',
-                        gcal_worklog.issue)
+                                            'starting at %s: duration %s differs from JIRA duration %s'
+                                            % (gcal_worklog.issue, gcal_worklog.start,
+                                               gcal_worklog.duration, jira_worklog.duration))
+                print(gcal_worklog.duration, 'hours starting', gcal_worklog.start,
+                      'already logged for', gcal_worklog.issue)
             else:
-                print('Logging', gcal_worklog.duration, 'hours starting',
-                        gcal_worklog.start, 'for', gcal_worklog.issue)
+                print('Logging', gcal_worklog.duration, 'hours starting', gcal_worklog.start, 'for', gcal_worklog.issue)
+                # Dates in JIRA use JIRA server timezone, tzinfo is ignored
+                # and the offset has to be manually subtracted - what a mess
+                jira_tz = pytz.timezone(worklogconfig.JIRA_TIMEZONE)
+                started = gcal_worklog.start - jira_tz.utcoffset(gcal_worklog.start.replace(tzinfo=None))
                 jira.add_worklog(issue=gcal_worklog.issue,
-                        timeSpentSeconds=gcal_worklog.duration.seconds,
-                        started=gcal_worklog.start, comment=gcal_worklog.comment)
+                                 timeSpentSeconds=gcal_worklog.duration.seconds,
+                                 started=started,
+                                 comment=gcal_worklog.comment)
                 durations.append(gcal_worklog.duration)
         except WorklogParseError as e:
             print(e)
@@ -71,10 +76,13 @@ def import_worklogs(jira, worklogconfig, calendar_name, from_day, to_day):
 
     return sum(durations, datetime.timedelta(0))
 
+
 JIRA_ISSUE_REGEX = re.compile('[A-Z]+-\d+')
+
 
 @total_ordering
 class Worklog(object):
+
     @staticmethod
     def from_gcal(event):
         start = _parse_iso_date(event['start'].get('dateTime'))
@@ -85,7 +93,7 @@ class Worklog(object):
         issue = summary[0].strip()
         if not JIRA_ISSUE_REGEX.match(issue):
             raise WorklogParseError("'%s' is not a JIRA issue ID" %
-                    issue.encode('utf-8'))
+                                    issue.encode('utf-8'))
         comment = summary[1].strip() if len(summary) > 1 else ''
         return Worklog(start, duration, issue, comment)
 
@@ -109,8 +117,10 @@ class Worklog(object):
     def __lt__(self, other):
         return NotImplemented
 
+
 def _convert_to_datestring(datestr, conf):
     return datetime.datetime.strptime(datestr, '%Y-%m-%d').isoformat() + conf.TIMEZONE
+
 
 def _get_calendar_service(conf):
     credentials = _get_credentials(conf)
@@ -118,16 +128,19 @@ def _get_calendar_service(conf):
     service = discovery.build('calendar', 'v3', http=http)
     return service
 
+
 def _get_calendar_id(service, calendar_name):
     calendars = service.calendarList().list().execute().get('items', [])
     calendarId = next((c['id'] for c in calendars
-        if c['summary'] == calendar_name), None)
+                       if c['summary'] == calendar_name), None)
     if calendarId is None:
         raise RuntimeError("Calendar '%s' not found" % calendar_name)
     return calendarId
 
+
 def _parse_iso_date(datestr):
     return dateutil.parser.parse(datestr)
+
 
 def _get_credentials(conf):
     """Gets valid user credentials from storage.
@@ -148,4 +161,3 @@ def _get_credentials(conf):
         credentials = tools.run_flow(flow, store)
         print('Storing Google Calendar credentials to', conf.CREDENTIAL_FILE)
     return credentials
-
