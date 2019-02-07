@@ -94,6 +94,7 @@ The task needs special configuration in `exportimportconfig.py` (see sample in
 * `RESOLUTION_MAP`: map source JIRA resolutions to target resolutions, only used when a `WithResolution` transition is used in `STATUS_TRANSITIONS`
 * `ADD_COMMENT_TO_OLD_ISSUE`: if `True`, add comment to source JIRA issue that it was exported to new issue in target JIRA with issue link
 * `CUSTOM_FIELD`: a single custom field that you can set to a default value for all issues (set to `None` if not needed)
+* `CUSTOM_FIELD_MAP`: map source JIRA fields to target JIRA fields. This can also be used for system fields that are not mapped out of the box, such as 'environment'
 
 Note that epics and sub-tasks should be excluded from the source JIRA query as
 they are automatically imported via the parent task. The the recommended
