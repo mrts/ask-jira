@@ -15,6 +15,8 @@ def export_import_issues(source_jira, conf, query):
     _make_new_issues(source_jira, target_jira, issues, conf, result, None)
     return result
 
+_g_issue_map = {}
+
 def _make_new_issues(source_jira, target_jira, issues, conf, result, parent):
     for issue in issues:
         if not parent:
@@ -41,10 +43,14 @@ def _make_new_issues(source_jira, target_jira, issues, conf, result, parent):
             fields['fixVersions'] = target_versions
 
         new_issue = target_jira.create_issue(fields=fields)
+        _g_issue_map[issue.key] = new_issue
         if not parent:
             print('to', new_issue.key, '...', end=' ')
 
-        _set_epic_link(new_issue, issue, conf, source_jira, target_jira)
+        if getattr(conf,'NO_AUTO_CREATE_EPICS',False):
+            _set_epic_link_nocreate(new_issue, issue, conf, source_jira, target_jira)
+        else:
+            _set_epic_link(new_issue, issue, conf, source_jira, target_jira)
         _set_status(new_issue, issue, conf, target_jira)
 
         if issue.fields.worklog:
@@ -113,6 +119,19 @@ def _get_new_issue_fields(fields, conf):
     return result
 
 _g_epic_map = {}
+
+def _set_epic_link_nocreate(new_issue, old_issue, conf, source_jira, target_jira):
+    source_epic_key = getattr(old_issue.fields, conf.SOURCE_EPIC_LINK_FIELD_ID)
+    if not source_epic_key:
+        return
+    global _g_issue_map
+    if source_epic_key not in _g_issue_map:
+        print('\nATTENTION: Epic %s (source ID) has not been created, yet so cannot link Story %s (target ID) to it' % (source_epic_key, new_issue.key))
+        print('-> please create this link manually')
+    else:
+        target_epic = _g_issue_map[source_epic_key]
+        target_jira.add_issues_to_epic(target_epic.key, [new_issue.key])
+        print('linked to epic', target_epic.key, '...', end=' ')
 
 def _set_epic_link(new_issue, old_issue, conf, source_jira, target_jira):
     source_epic_key = getattr(old_issue.fields, conf.SOURCE_EPIC_LINK_FIELD_ID)
