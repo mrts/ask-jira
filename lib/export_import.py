@@ -16,17 +16,37 @@ def export_import_issues(source_jira, conf, query):
     return result
 
 _g_issue_map = {}
+_g_subtask_map = {}
 
 def _make_new_issues(source_jira, target_jira, issues, conf, result, parent):
+    global _g_subtask_map
+    no_auto_create_subtasks = getattr(conf,'NO_AUTO_CREATE_SUBTASKS',False) 
     for issue in issues:
-        if not parent:
+        if no_auto_create_subtasks:
+            if issue.key in _g_subtask_map:
+                parent = _g_subtask_map[issue.key]
+            else:
+                parent = None
             print('Exporting', issue.key, end=' ')
+        else:
+            if not parent:
+                print('Exporting', issue.key, end=' ')
+
         # re-fetch to include comments and attachments
         issue = source_jira.issue(issue.key, expand='comments,attachments')
         fields = _get_new_issue_fields(issue.fields, conf)
+
+        if no_auto_create_subtasks:
+            if fields['issuetype']['name'] == 'Sub-task' and not parent:
+                print('\n     WARNING: %s is a "Sub-task" but the parent has not been created, yet' % issue.key)
+                print('     Creating it as regular "Task"')
+                print('     -> please manually convert it into a "Sub-task" and link it under the appropriate Issue')
+                fields['issuetype']['name'] = 'Task'
+            if parent:
+                print('(as a subtask of %s)' % parent.key, end=' ')
         if parent:
             fields['parent'] = {'key': parent.key}
-
+ 
         # Migrate issue version.
         source_versions = getattr(issue.fields, 'fixVersions')
         if source_versions is not None:
@@ -44,7 +64,7 @@ def _make_new_issues(source_jira, target_jira, issues, conf, result, parent):
 
         new_issue = target_jira.create_issue(fields=fields)
         _g_issue_map[issue.key] = new_issue
-        if not parent:
+        if not parent or no_auto_create_subtasks:
             print('to', new_issue.key, '...', end=' ')
 
         if getattr(conf,'NO_AUTO_CREATE_EPICS',False):
@@ -67,10 +87,14 @@ def _make_new_issues(source_jira, target_jira, issues, conf, result, parent):
                         e.status_code, '...', end=' ')
                 target_jira.add_comment(new_issue, '*Failed to import attachments*')
         if issue.fields.subtasks:
-            subtasks = [source_jira.issue(subtask.key) for subtask in
-                    issue.fields.subtasks]
-            print('with', len(subtasks), 'subtasks ...', end=' ')
-            _make_new_issues(source_jira, target_jira, subtasks, conf, result, new_issue)
+            if no_auto_create_subtasks:
+                for subtaskid in issue.fields.subtasks:
+                    _g_subtask_map[subtaskid.key] = new_issue
+            else:
+                subtasks = [source_jira.issue(subtask.key) for subtask in
+                        issue.fields.subtasks]
+                print('with', len(subtasks), 'subtasks ...', end=' ')
+                _make_new_issues(source_jira, target_jira, subtasks, conf, result, new_issue)
 
         comment = 'Imported from *[{1}|{0}/browse/{1}]*'.format(
                 source_jira._options['server'], issue.key)
@@ -81,7 +105,7 @@ def _make_new_issues(source_jira, target_jira, issues, conf, result, parent):
             source_jira.add_comment(issue, comment)
 
         result.append(new_issue.key)
-        if not parent:
+        if not parent or no_auto_create_subtasks:
             print('done')
 
 
@@ -126,8 +150,8 @@ def _set_epic_link_nocreate(new_issue, old_issue, conf, source_jira, target_jira
         return
     global _g_issue_map
     if source_epic_key not in _g_issue_map:
-        print('\nATTENTION: Epic %s (source ID) has not been created, yet so cannot link Story %s (target ID) to it' % (source_epic_key, new_issue.key))
-        print('-> please create this link manually')
+        print('\n     WARNING: Epic %s (source ID) has not been created yet so cannot link Story %s (target ID) to it' % (source_epic_key, new_issue.key))
+        print('     -> please create this link manually')
     else:
         target_epic = _g_issue_map[source_epic_key]
         target_jira.add_issues_to_epic(target_epic.key, [new_issue.key])
