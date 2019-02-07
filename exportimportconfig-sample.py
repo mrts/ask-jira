@@ -71,6 +71,21 @@ STATUS_TRANSITIONS = {
         WithResolution('Testing passed')),
 }
 
+STATUS_TRANSITIONS_ISSUETYPE = {
+    'Sub-task': {
+        'To Do': None,
+        'In Progress': ('In Progress',),
+        'Review': ('In Progress',),
+        'Done': ('Done',),
+    },
+    'Task': {
+        'To Do': None,
+        'In Progress': ('In Progress',),
+        'Review': ('In Progress',),
+        'Done': ('Done',),
+    }
+}
+
 ADD_COMMENT_TO_OLD_ISSUE = True
 
 CUSTOM_FIELD = ('customfield_11086', {'value': 'Custom value'})
