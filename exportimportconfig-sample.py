@@ -74,3 +74,7 @@ STATUS_TRANSITIONS = {
 ADD_COMMENT_TO_OLD_ISSUE = True
 
 CUSTOM_FIELD = ('customfield_11086', {'value': 'Custom value'})
+
+#NO_AUTO_CREATE_EPICS = True
+#NO_AUTO_CREATE_SUBTASKS = True
+
