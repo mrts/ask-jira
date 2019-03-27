@@ -137,8 +137,20 @@ def _set_epic_link(new_issue, old_issue, conf, source_jira, target_jira):
     print('linked to epic', target_epic.key, '...', end=' ')
 
 def _set_status(new_issue, old_issue, conf, target_jira):
+    issue_type = new_issue.fields.issuetype.name
     status_name = old_issue.fields.status.name
-    transitions = conf.STATUS_TRANSITIONS[status_name]
+
+    transitions = None
+    transition_map = getattr(conf, "STATUS_TRANSITIONS_ISSUETYPE", None)
+    if transition_map:
+        if issue_type in transition_map:
+            transition_map = transition_map[issue_type]
+        else:
+            transition_map = None
+    if not transition_map:
+        transition_map = conf.STATUS_TRANSITIONS
+
+    transitions = transition_map[status_name]
     if not transitions:
         return
     for transition_name in transitions:
