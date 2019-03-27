@@ -110,6 +110,12 @@ def _get_new_issue_fields(fields, conf):
             result[name] = {'name': name_map[value]}
     if conf.CUSTOM_FIELD:
         result[conf.CUSTOM_FIELD[0]] = conf.CUSTOM_FIELD[1]
+    if conf.CUSTOM_FIELD_MAP:
+        for sourcename in conf.CUSTOM_FIELD_MAP.keys():
+            targetname = conf.CUSTOM_FIELD_MAP[sourcename]
+            value = getattr(fields, sourcename, None)
+            if value:
+                result[targetname] = value
     return result
 
 _g_epic_map = {}
