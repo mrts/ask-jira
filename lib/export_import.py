@@ -21,7 +21,9 @@ _g_subtask_map = {}
 def _make_new_issues(source_jira, target_jira, issues, conf, result, parent):
     global _g_subtask_map
     no_auto_create_subtasks = getattr(conf,'NO_AUTO_CREATE_SUBTASKS',False) 
+    issue_number=0
     for issue in issues:
+        issue_number = issue_number + 1
         if no_auto_create_subtasks:
             if issue.key in _g_subtask_map:
                 parent = _g_subtask_map[issue.key]
@@ -61,6 +63,19 @@ def _make_new_issues(source_jira, target_jira, issues, conf, result, parent):
 
             # Support multiple versions per ticket.
             fields['fixVersions'] = target_versions
+
+        if getattr(conf, 'FILL_CONSECUTIVE_NUMBERING_GAPS', False) and getattr(conf, 'NO_AUTO_CREATE_EPICS', False) and no_auto_create_subtasks:
+            dummy_fields = { }
+            dummy_fields['project'] = fields['project']
+            dummy_fields['issuetype'] = getattr(conf, 'FILL_CONSECUTIVE_DUMMY_ISSUETYPE', 'Task')
+            dummy_fields['summary'] = "DUMMY Issue created during import to preserve issue numbering"
+            source_issue_number=int(issue.key.split('-')[1])
+            while(source_issue_number > issue_number):
+                print('Issue IDs in source Jira are not consecutive!')
+                print('  - Want to create issue ', source_issue_number, ' but missing preceding issue ', issue_number, '.')
+                print('  -> Creating a dummy issue...')
+                target_jira.create_issue(fields=dummy_fields)
+                issue_number = issue_number + 1
 
         new_issue = target_jira.create_issue(fields=fields)
         _g_issue_map[issue.key] = new_issue
