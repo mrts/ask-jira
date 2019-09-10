@@ -109,13 +109,11 @@ Full example:
         AND issuetype != Epic'
 
 ### Preserve JIRA IDs
-Under certain circumstances it is possible to keep the JIRA IDs from the soruce system in the target system.
+Under certain circumstances it is possible to keep the JIRA IDs from the source system in the target system.
 The idea is that Jira always numbers issues consecutively and thus we need to make sure we add them to the system in the correct order.
 
 Please note the following limitations:
-* Issues in the source system need to be consecutively numbered starting with one. If there are any gaps, e.g. because an administrator deleted a ticket in between this **will not work**
 * You need to start with a fresh, clean target project. If there are already issues or there used to be issues which had been deleted, Jira will not start numbering with 1, so this **will not work**
-i
 * Stories need to have a higher ID than their linked Epic. If this is not the case, the script will warn you and you need to establish the reference manually after the import is complete
 * Sub-Tasks need to have a higher ID than their parent. If this is not the case, the program will create the Sub-Task as a regular Task and give you a warning. You need to manually convert and assign the Sub-Task after the import is complete
 * It makes sense to use the same project ID in the target and source system such that the IDs are really identical, but this is not mandatory
@@ -127,11 +125,18 @@ If all this is given and allright, you need to add the following statements to y
 
 This prevents ask-jira from creating EPICs or Sub-Tasks as soon as it finds references to them.
 But don't worry, *EPIC links* and *Sub-task to Parent* references are still estabished in most cases (according to the limitations above)
+If you have gaps in the issue numbering in the source system - e.g. because an Administrator deleted some tickets - you can add the following statement to *exportimportconfig.py*
+
+    FILL\_CONSECUTIVE\_NUMBERING\_GAPS = True
+
+This detects gaps in the numbering of issues in the source Jira and creates dummy Issues of issue type 'Task' in the target Jira to fill these gaps.
+This is necessary since Jira always numbers new issues consecutively and ask-jira has no influence on that.
 
 Now go ahead and start the export/import process.
-**Important:** Make sure your JQL comprises *all* issues in the project and the issues are *sorted by ther ID*
+**Very Important:** Make sure your JQL comprises *all* issues in the project and the issues are *sorted by their ID*
+Otherwise - if you enabled FILL\_CONSECUTIVE\_NUMBERING\_GAPS - ask-jira might not stop creating dummy issues.
 
-For example like this:
+Start the process for example like this:
      ./ask-jira.py export_import_issues_for_jql 'project = PROJ ORDER BY key'
 
 
