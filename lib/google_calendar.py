@@ -77,7 +77,7 @@ def import_worklogs(jira, worklogconfig, calendar_name, from_day, to_day):
     return sum(durations, datetime.timedelta(0))
 
 
-JIRA_ISSUE_REGEX = re.compile('[A-Z]+-\d+')
+JIRA_ISSUE_REGEX = re.compile('[A-Z\d]+-\d+')
 
 
 @total_ordering
