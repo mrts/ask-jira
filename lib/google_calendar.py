@@ -21,7 +21,7 @@ class WorklogParseError(RuntimeError):
     pass
 
 
-def import_worklogs(jira, worklogconfig, calendar_name, from_day, to_day):
+def import_worklogs(jira, jira_user, worklogconfig, calendar_name, from_day, to_day):
     """
     Imports worklogs using the Google Calendar API and sumbits them to JIRA.
     Calendar entries must start with JIRA issue IDs opitionally followed by
@@ -48,7 +48,9 @@ def import_worklogs(jira, worklogconfig, calendar_name, from_day, to_day):
     for event in events:
         try:
             gcal_worklog = Worklog.from_gcal(event)
-            jira_worklogs = [Worklog.from_jira(w) for w in jira.worklogs(gcal_worklog.issue)]
+            jira_worklogs = [Worklog.from_jira(w)
+                    for w in jira.worklogs(gcal_worklog.issue)
+                    if w.author.key == jira_user]
             if (jira_worklogs and gcal_worklog in jira_worklogs):
                 jira_worklog = next(w for w in jira_worklogs if w == gcal_worklog)
                 if gcal_worklog.duration != jira_worklog.duration:
