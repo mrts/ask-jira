@@ -45,6 +45,12 @@ def import_worklogs(jira, jira_user, worklogconfig, calendar_name, from_day, to_
         return 0
 
     durations = []
+    prefix_filter = worklogconfig.WORKLOG_PREFIX_FILTER if hasattr(worklogconfig,
+            'WORKLOG_PREFIX_FILTER') and worklogconfig.WORKLOG_PREFIX_FILTER else None
+    if prefix_filter:
+        print('** Filtering worklogs by prefix', prefix_filter)
+        events = [event for event in events if
+                event['summary'].startswith(prefix_filter)]
     for event in events:
         try:
             gcal_worklog = Worklog.from_gcal(event)
