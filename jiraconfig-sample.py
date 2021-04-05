@@ -1,5 +1,7 @@
+import keyring
+
 JIRA = {
     "server": "https://example.com/jira/",
     "user": "user",
-    "password": "password"
+    "password": keyring.get_password("system", "user")
 }
