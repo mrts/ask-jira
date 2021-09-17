@@ -11,10 +11,10 @@ import pytz
 
 from jira.exceptions import JIRAError
 
-from apiclient import discovery
-from oauth2client import client
-from oauth2client import tools
-from oauth2client.file import Storage
+from googleapiclient.discovery import build
+from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
 
 
 class WorklogParseError(RuntimeError):
@@ -132,9 +132,7 @@ def _convert_to_datestring(datestr, conf):
 
 def _get_calendar_service(conf):
     credentials = _get_credentials(conf)
-    http = credentials.authorize(httplib2.Http())
-    service = discovery.build('calendar', 'v3', http=http)
-    return service
+    return build('calendar', 'v3', credentials=credentials)
 
 
 def _get_calendar_id(service, calendar_name):
@@ -159,13 +157,19 @@ def _get_credentials(conf):
     Returns:
         Credentials, the obtained credential.
     """
-    store = Storage(conf.CREDENTIAL_FILE)
-    credentials = store.get()
-    if not credentials or credentials.invalid:
-        flow = client.flow_from_clientsecrets(conf.CLIENT_SECRET_FILE, conf.SCOPES)
-        flow.user_agent = conf.APPLICATION_NAME
-        # avoid mess with argparse
-        sys.argv = [sys.argv[0]]
-        credentials = tools.run_flow(flow, store)
+    credentials = None
+    if os.path.exists(conf.CREDENTIAL_FILE):
+        credentials = Credentials.from_authorized_user_file(conf.CREDENTIAL_FILE, conf.SCOPES)
+    if not credentials or not credentials.valid:
+        if credentials and credentials.expired and credentials.refresh_token:
+            credentials.refresh(Request())
+        else:
+            # avoid mess with argparse
+            # sys.argv = [sys.argv[0]]
+            flow = InstalledAppFlow.from_client_secrets_file(conf.CLIENT_SECRET_FILE, conf.SCOPES)
+            credentials = flow.run_local_server(port=0)
+        # Save the credentials for the next run
         print('Storing Google Calendar credentials to', conf.CREDENTIAL_FILE)
+        with open(conf.CREDENTIAL_FILE, 'w') as credentials_token:
+            credentials_token.write(credentials.to_json())
     return credentials

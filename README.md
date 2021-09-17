@@ -27,7 +27,7 @@ Features:
 
     cd ask-jira
 
-    virtualenv venv
+    python -m venv venv
     . venv/scripts/activate # or venv/bin/activate in non-Windows
     pip install --requirement=requirements.txt
 
