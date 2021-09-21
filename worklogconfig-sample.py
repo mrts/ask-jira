@@ -1,7 +1,9 @@
 import os
 
 TIMEZONE = '+02'
-JIRA_TIMEZONE = 'Europe/Tallinn'
+# Use timezone string like 'Europe/Tallinn' if timezone support is required in
+# Jira.
+JIRA_TIMEZONE = None
 WORKLOG_PREFIX_FILTER = 'PROJ'
 
 HOME_DIR = os.path.expanduser('~')

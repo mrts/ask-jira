@@ -57,6 +57,7 @@ def import_worklogs(jira, jira_user, worklogconfig, calendar_name, from_day, to_
             jira_worklogs = [Worklog.from_jira(w)
                     for w in jira.worklogs(gcal_worklog.issue)
                     if w.author.key == jira_user]
+            # breakpoint()
             if (jira_worklogs and gcal_worklog in jira_worklogs):
                 jira_worklog = next(w for w in jira_worklogs if w == gcal_worklog)
                 if gcal_worklog.duration != jira_worklog.duration:
@@ -68,10 +69,12 @@ def import_worklogs(jira, jira_user, worklogconfig, calendar_name, from_day, to_
                       'already logged for', gcal_worklog.issue)
             else:
                 print('Logging', gcal_worklog.duration, 'hours starting', gcal_worklog.start, 'for', gcal_worklog.issue)
-                # Dates in JIRA use JIRA server timezone, tzinfo is ignored
-                # and the offset has to be manually subtracted - what a mess
-                jira_tz = pytz.timezone(worklogconfig.JIRA_TIMEZONE)
-                started = gcal_worklog.start - jira_tz.utcoffset(gcal_worklog.start.replace(tzinfo=None))
+                started = gcal_worklog.start
+                # Dates in JIRA use JIRA server timezone, tzinfo is ignored, hence manual offset calculation is required
+                # if timezone support is required in Jira.
+                if worklogconfig.JIRA_TIMEZONE:
+                    jira_tz = pytz.timezone(worklogconfig.JIRA_TIMEZONE)
+                    started -= jira_tz.utcoffset(gcal_worklog.start.replace(tzinfo=None))
                 jira.add_worklog(issue=gcal_worklog.issue,
                                  timeSpentSeconds=gcal_worklog.duration.seconds,
                                  started=started,
