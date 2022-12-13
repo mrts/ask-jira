@@ -93,6 +93,7 @@ The task needs special configuration in `exportimportconfig.py` (see sample in
 * `STATUS_TRANSITIONS`: map of source JIRA statuses to list of workflow transition names in target JIRA that result in equivalent status, `None` for no transition
 * `STATUS_TRANSITIONS_ISSUETYPE`: issuetype specific map of source JIRA statuses to list of workflow transition names in target JIRA that result in equivalent status, `None` for no transition. If an issuetype is not in this list, the default `STATUS_TRANSITIONS` are used.
 * `RESOLUTION_MAP`: map source JIRA resolutions to target resolutions, only used when a `WithResolution` transition is used in `STATUS_TRANSITIONS`
+* `INCLUDE_WORKLOGS`: if `True`, add worklogs from source JIRA issue to the new issue in target JIRA
 * `ADD_COMMENT_TO_OLD_ISSUE`: if `True`, add comment to source JIRA issue that it was exported to new issue in target JIRA with issue link
 * `CUSTOM_FIELD`: a single custom field that you can set to a default value for all issues (set to `None` if not needed)
 * `CUSTOM_FIELD_MAP`: map source JIRA fields to target JIRA fields. This can also be used for system fields that are not mapped out of the box, such as 'environment'

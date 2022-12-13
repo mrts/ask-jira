@@ -47,7 +47,7 @@ def _make_new_issues(source_jira, target_jira, issues, conf, result, parent):
         _set_epic_link(new_issue, issue, conf, source_jira, target_jira)
         _set_status(new_issue, issue, conf, target_jira)
 
-        if issue.fields.worklog:
+        if conf.INCLUDE_WORKLOGS and issue.fields.worklog:
             for worklog in issue.fields.worklog.worklogs:
                 target_jira.add_worklog(new_issue, None, worklog.timeSpentSeconds)
 
