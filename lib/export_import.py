@@ -6,6 +6,7 @@ from io import BytesIO
 from jira.client import JIRA
 from jira.exceptions import JIRAError
 
+
 def export_import_issues(source_jira, conf, query):
     target_jira = JIRA({'server': conf.JIRA['server']},
                 basic_auth=(conf.JIRA['user'], conf.JIRA['password']))
@@ -15,8 +16,13 @@ def export_import_issues(source_jira, conf, query):
     _make_new_issues(source_jira, target_jira, issues, conf, result, None)
     return result
 
+
 def _make_new_issues(source_jira, target_jira, issues, conf, result, parent):
     for issue in issues:
+        if _already_imported(conf, target_jira, issue.key):
+            print('Issue {} has already been imported, skipping...'.format(issue.key))
+            continue
+
         if not parent:
             print('Exporting', issue.key, end=' ')
         # re-fetch to include comments and attachments
@@ -24,6 +30,7 @@ def _make_new_issues(source_jira, target_jira, issues, conf, result, parent):
         fields = _get_new_issue_fields(issue.fields, conf)
         if parent:
             fields['parent'] = {'key': parent.key}
+        _add_source_jira_issue_key(conf, fields, issue.key)
 
         # Migrate issue version.
         source_versions = getattr(issue.fields, 'fixVersions')
@@ -79,6 +86,19 @@ def _make_new_issues(source_jira, target_jira, issues, conf, result, parent):
             print('done')
 
 
+def _already_imported(conf, target_jira, issue_key):
+    if conf.CUSTOM_FIELD_FOR_SOURCE_JIRA_ISSUE_KEY:
+        # TODO: make the ~ operator configurable as well
+        return target_jira.search_issues("'{}' ~ '{}'".format(
+            conf.CUSTOM_FIELD_FOR_SOURCE_JIRA_ISSUE_KEY[0], issue_key))
+    return False
+
+
+def _add_source_jira_issue_key(conf, fields, issue_key):
+    if conf.CUSTOM_FIELD_FOR_SOURCE_JIRA_ISSUE_KEY:
+        fields[conf.CUSTOM_FIELD_FOR_SOURCE_JIRA_ISSUE_KEY[1]] = issue_key
+
+
 def _get_target_version_by_name(jira, conf, name):
     """
     Get an existing version by name for the current project.
@@ -126,15 +146,23 @@ def _set_epic_link(new_issue, old_issue, conf, source_jira, target_jira):
         return
     global _g_epic_map
     if source_epic_key not in _g_epic_map:
-        source_epic = source_jira.issue(source_epic_key)
-        epic_fields = _get_new_issue_fields(source_epic.fields, conf)
-        epic_fields[conf.TARGET_EPIC_NAME_FIELD_ID] = getattr(
-                source_epic.fields, conf.SOURCE_EPIC_NAME_FIELD_ID)
-        target_epic = target_jira.create_issue(fields=epic_fields)
+        target_epic = _already_imported(conf, target_jira, source_epic_key)
+        if target_epic:
+            print('epic {} has already been imported, skipping...'.format(source_epic_key), end=' ')
+            target_epic = target_epic[0]
+        else:
+            print('importing epic {} ...'.format(source_epic_key), end=' ')
+            source_epic = source_jira.issue(source_epic_key)
+            epic_fields = _get_new_issue_fields(source_epic.fields, conf)
+            epic_fields[conf.TARGET_EPIC_NAME_FIELD_ID] = getattr(
+                    source_epic.fields, conf.SOURCE_EPIC_NAME_FIELD_ID)
+            _add_source_jira_issue_key(conf, epic_fields, source_epic_key)
+            target_epic = target_jira.create_issue(fields=epic_fields)
         _g_epic_map[source_epic_key] = target_epic
     target_epic = _g_epic_map[source_epic_key]
     target_jira.add_issues_to_epic(target_epic.key, [new_issue.key])
     print('linked to epic', target_epic.key, '...', end=' ')
+
 
 def _set_status(new_issue, old_issue, conf, target_jira):
     issue_type = new_issue.fields.issuetype.name
@@ -161,10 +189,12 @@ def _set_status(new_issue, old_issue, conf, target_jira):
         else:
             target_jira.transition_issue(new_issue, transition_name)
 
+
 def _add_comments(issue, jira, comments):
     for comment in comments:
         jira.add_comment(issue, u"*Comment by {0}*:\n{1}"
                 .format(comment.author.displayName, comment.body))
+
 
 def _add_attachments(issue, jira, attachments):
     for attachment in attachments:
@@ -175,9 +205,11 @@ def _add_attachments(issue, jira, attachments):
                     filename=_normalize_filename(attachment.filename),
                     attachment=buf)
 
+
 def _normalize_filename(value):
     return unicodedata.normalize('NFKD', value).encode('ascii',
             'ignore').decode('ascii')
+
 
 # -------------------------------------
 # TODO:
