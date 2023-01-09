@@ -68,6 +68,7 @@ RESOLUTION_MAP = {
     'Done': 'Done',
 }
 
+# Note that transition names are different from status names
 STATUS_TRANSITIONS = {
     'Open': None,
     'Reopened': None,

@@ -190,6 +190,10 @@ def _set_status(new_issue, old_issue, conf, target_jira):
     transitions = transition_map[status_name]
     if not transitions:
         return
+    # Allow single string and WithResolution values by converting them to a tuple
+    if isinstance(transitions, str) or isinstance(transitions, conf.WithResolution):
+        transitions = (transitions,)
+
     for transition_name in transitions:
         if isinstance(transition_name, conf.WithResolution):
             resolution = conf.RESOLUTION_MAP[old_issue.fields.resolution.name]
