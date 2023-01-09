@@ -28,10 +28,12 @@ Features:
     cd ask-jira
 
     python -m venv venv
-    . venv/scripts/activate # or venv/bin/activate in non-Windows
+    . venv/scripts/activate # when using Git BASH from Git for Windows
+    # . venv/bin/activate # in non-Windows environments
     pip install --requirement=requirements.txt
 
     cp jiraconfig-sample.py jiraconfig.py
+
     # edit jiraconfig.py
 
     ./ask-jira.py projects # for testing, will print available projects
@@ -40,7 +42,7 @@ JIRA server configuration is picked up from `jiraconfig.py`.
 
 ## Usage
 
-Run the command with 
+Run the command with
 
     $ ./ask-jira.py <command> <command-specific parameters>
 
