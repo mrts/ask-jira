@@ -22,18 +22,28 @@ def _make_jql_argument_parser(parser):
     parser.add_argument("jql", help="the JQL query used in the command")
     return parser
 
+def _make_transitions_argument_parser(parser):
+    parser.add_argument("issue", help="the JIRA issue key used in the command")
+    return parser
+
 # commands
 
 def projects(jira, args):
     """List available JIRA projects"""
-    projects = jira.projects()
     print("Available JIRA projects:")
-    pprint.pprint([project.name for project in projects])
+    pprint.pprint([project.name for project in jira.projects()])
 
 def fields(jira, args):
     """List available JIRA field names and IDs"""
     print("Available JIRA fields (name, id):")
     pprint.pprint([(field['name'], field['id']) for field in jira.fields()])
+
+def transitions(jira, args):
+    """List available JIRA transitions for the given issue"""
+    print("Available JIRA transitions:")
+    pprint.pprint(jira.transitions(args.issue))
+
+transitions.argparser = _make_transitions_argument_parser
 
 def sum_timetracking_for_jql(jira, args):
     """Sum original estimate, time spent

@@ -63,6 +63,7 @@ Here's the default help:
                'projects': List available JIRA projects
                'sum_timetracking_for_jql': Sum original estimate, time spent
                  and time remaining for all issues that match the given JQL query
+               'transitions': List available JIRA transitions for the given issue
 
     optional arguments:
       -h, --help  show this help message and exit
