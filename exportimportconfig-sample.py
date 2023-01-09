@@ -92,9 +92,11 @@ ADD_COMMENT_TO_OLD_ISSUE = True
 CUSTOM_FIELD_FOR_SOURCE_JIRA_ISSUE_KEY = ('Text 1', 'customfield_10132')
 
 CUSTOM_FIELD = ('customfield_11086', {'value': 'Custom value'})
+# For the Tempo team field, use:
+# CUSTOM_FIELD = ('customfield_11086', 'Team name')
+# See https://community.atlassian.com/t5/Jira-Software-questions/Can-you-update-the-Tempo-team-field-using-automation/qaq-p/1355359
 
 CUSTOM_FIELD_MAP = {
-        'environment': 'environment',
         'customfield_10200': 'customfield_11320', # User Story
         'customfield_10008': 'customfield_10004', # Story Points
         'customfield_10010': 'customfield_11321', # Acceptance Criteria

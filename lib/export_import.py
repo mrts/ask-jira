@@ -118,7 +118,7 @@ def _get_target_version_by_name(jira, conf, name):
 def _get_new_issue_fields(fields, conf):
     result = {}
     result['project'] = conf.JIRA['project']
-    for name in ('summary', 'description', 'labels'):
+    for name in ('summary', 'description', 'labels', 'environment'):
         value = getattr(fields, name)
         if value is not None:
             result[name] = value
