@@ -84,9 +84,13 @@ The task needs special configuration in `exportimportconfig.py` (see sample in
 
 * `JIRA`: the target JIRA server configuration where the issues are exported to
 * `PRIORITY_MAP`: map source JIRA priorities to target priorities, e.g. `'Major': 'Medium'`
+* `DEFAULT_PRIORITY`: if source JIRA priority is not found in `PRIORITY_MAP` use this priority (optional)
 * `ISSUETYPE_MAP`: map source JIRA issue types to target issue types,  e.g. `'New Feature': 'Story'`
+* `DEFAULT_ISSUETYPE`: if source JIRA issue type is not found in `ISSUETYPE_MAP` use this issue type (optional)
 * `ASSIGNEE_MAP`: map source JIRA assignees to target assignees
+* `DEFAULT_ASSIGNEE`: if source JIRA issue type is not found in `ASSIGNEE_MAP` use this issue type (optional)
 * `REPORTER_MAP`: map source JIRA reporters to target reporters (usually identical to `ASSIGNEE_MAP`)
+* `DEFAULT_REPORTER`: if source JIRA issue type is not found in `REPORTER_MAP` use this issue type (optional)
 * `SOURCE_EPIC_LINK_FIELD_ID`: ID of the epic field in source JIRA, find it by calling `fields`, look for *Epic Link*
 * `SOURCE_EPIC_NAME_FIELD_ID`: ID of the epic field in source JIRA, find it by calling `fields`, look for *Epic Name*
 * `TARGET_EPIC_NAME_FIELD_ID`: ID of the epic field in **target** JIRA, find it by changing configuration to use target JIRA and calling `fields`, look for *Epic Name*

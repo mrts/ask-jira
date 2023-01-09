@@ -122,12 +122,21 @@ def _get_new_issue_fields(fields, conf):
         value = getattr(fields, name)
         if value is not None:
             result[name] = value
-    for name in ('priority', 'issuetype', 'assignee', 'reporter'):
-        value = getattr(fields, name)
+    for fieldname in ('priority', 'issuetype', 'assignee', 'reporter'):
+        value = getattr(fields, fieldname)
         if value:
             value = getattr(value, 'name')
-            name_map = getattr(conf, name.upper() + '_MAP')
-            result[name] = {'name': name_map[value]}
+            fieldname_map = getattr(conf, fieldname.upper() + '_MAP')
+            if value in fieldname_map:
+                mapped_value = fieldname_map[value]
+            else:
+                try:
+                    mapped_value = getattr(conf, 'DEFAULT_' + fieldname.upper())
+                except AttributeError:
+                    raise AttributeError("Failed to find '%(value)s' in "
+                            '%(fieldname)s_MAP and DEFAULT_%(fieldname)s is not set' %
+                            {'value': value, 'fieldname': fieldname.upper()})
+            result[fieldname] = {'name': mapped_value}
     if conf.CUSTOM_FIELD:
         result[conf.CUSTOM_FIELD[0]] = conf.CUSTOM_FIELD[1]
     if conf.CUSTOM_FIELD_MAP:
