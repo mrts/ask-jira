@@ -107,7 +107,7 @@ The task needs special configuration in `exportimportconfig.py` (see sample in
 * `CUSTOM_FIELD_MAP`: map source JIRA fields to target JIRA fields. This can also be used for system fields that are not mapped out of the box, such as 'environment'
 
 Note that epics and sub-tasks should be excluded from the source JIRA query as
-they are automatically imported via the parent task. The the recommended
+they are automatically imported via the parent task. The recommended
 snippet to add to the query is:
 
     AND issuetype not in subTaskIssueTypes() AND issuetype != Epic
