@@ -7,89 +7,114 @@ from jira.client import JIRA
 from jira.exceptions import JIRAError
 
 
-def export_import_issues(source_jira, conf, query):
-    target_jira = JIRA({'server': conf.JIRA['server']},
+def export_import_issues(source_jira, conf, query, portfolio_epics=False):
+    dest_jira = JIRA({'server': conf.JIRA['server']},
                 basic_auth=(conf.JIRA['user'], conf.JIRA['password']))
-    issues = source_jira.search_issues(query, maxResults=False)
+    source_issues = source_jira.search_issues(query, maxResults=False)
+    if not source_issues:
+        print('No issues found for query', query, 'exiting')
+        return []
+    if portfolio_epics and not _has_portfolio_epic_label(source_issues[0], conf):
+        print('Portfolio epics requested, but first issue',
+                source_issues[0].key, 'does not have portfolio epic label',
+                conf.PORTFOLIO_EPIC_LABEL)
+        return []
     result = []
-    print('About to export/import', len(issues), 'issues')
-    _make_new_issues(source_jira, target_jira, issues, conf, result, None)
+    print('About to export/import', len(source_issues), 'issues')
+    _make_dest_issues(source_jira, dest_jira, source_issues, conf, result, None, portfolio_epics)
     return result
 
 
-def _make_new_issues(source_jira, target_jira, issues, conf, result, parent):
-    for issue in issues:
-        if _already_imported(conf, target_jira, issue.key):
-            print('Issue {} has already been imported, skipping...'.format(issue.key))
+def _make_dest_issues(source_jira, dest_jira, source_issues, conf, result, parent, portfolio_epics):
+    for source_issue in source_issues:
+        if _already_imported(conf, dest_jira, source_issue.key):
+            print('Issue', source_issue.key, 'has already been imported, skipping...')
             continue
-
         if not parent:
-            print('Exporting', issue.key, end=' ')
-        # re-fetch to include comments and attachments
-        issue = source_jira.issue(issue.key, expand='comments,attachments')
-        fields = _get_new_issue_fields(issue.fields, conf)
-        if parent:
-            fields['parent'] = {'key': parent.key}
-        _add_source_jira_issue_key(conf, fields, issue.key)
+            print('Exporting', source_issue.key, end=' ')
 
-        # Migrate issue version.
-        source_versions = getattr(issue.fields, 'fixVersions')
-        if source_versions is not None:
-            target_versions = []
-            for version in source_versions:
-                # We create the current version if it does not exist in the target JIRA project.
-                target_version = _get_target_version_by_name(target_jira, conf, getattr(version, 'name'))
-                if target_version is None:
-                    target_version = target_jira.create_version(getattr(version, 'name'), conf.JIRA['project'])
+        dest_issue = _map_issue(source_jira, dest_jira, source_issue, conf, result, parent, portfolio_epics)
 
-                target_versions.append({'id': getattr(target_version, 'id')})
-
-            # Support multiple versions per ticket.
-            fields['fixVersions'] = target_versions
-
-        new_issue = target_jira.create_issue(fields=fields)
-        if not parent:
-            print('to', new_issue.key, '...', end=' ')
-
-        _set_epic_link(new_issue, issue, conf, source_jira, target_jira)
-        _set_status(new_issue, issue, conf, target_jira)
-
-        if conf.INCLUDE_WORKLOGS and issue.fields.worklog:
-            for worklog in issue.fields.worklog.worklogs:
-                target_jira.add_worklog(new_issue, None, worklog.timeSpentSeconds)
-
-        if issue.fields.comment.comments:
-            _add_comments(new_issue, target_jira, issue.fields.comment.comments)
-        if issue.fields.attachment:
-            try:
-                _add_attachments(new_issue, target_jira, issue.fields.attachment)
-            except JIRAError as e:
-                print('ERROR: attachment import failed with status',
-                        e.status_code, '...', end=' ')
-                target_jira.add_comment(new_issue, '*Failed to import attachments*')
-        if issue.fields.subtasks:
-            subtasks = [source_jira.issue(subtask.key) for subtask in
-                    issue.fields.subtasks]
-            print('with', len(subtasks), 'subtasks ...', end=' ')
-            _make_new_issues(source_jira, target_jira, subtasks, conf, result, new_issue)
-
-        comment = 'Imported from *[{1}|{0}/browse/{1}]*'.format(
-                source_jira._options['server'], issue.key)
-        target_jira.add_comment(new_issue, comment)
-        if conf.ADD_COMMENT_TO_OLD_ISSUE:
-            comment = 'Exported to *[{1}|{0}/browse/{1}]*'.format(
-                    target_jira._options['server'], new_issue.key)
-            source_jira.add_comment(issue, comment)
-
-        result.append(new_issue.key)
+        result.append(dest_issue.key)
         if not parent:
             print('done')
 
 
-def _already_imported(conf, target_jira, issue_key):
+def _map_issue(source_jira, dest_jira, source_issue, conf, result, parent, portfolio_epics):
+    # Re-fetch to include comments and attachments.
+    source_issue = source_jira.issue(source_issue.key, expand='comments,attachments')
+    fields = _get_dest_issue_fields(source_issue.fields, conf)
+    if parent:
+        fields['parent'] = {'key': parent.key}
+    _add_source_jira_issue_key(conf, fields, source_issue.key)
+    _map_versions(dest_jira, source_issue, fields, conf)
+
+    dest_issue = dest_jira.create_issue(fields=fields)
+    if not parent:
+        print('to', dest_issue.key, '...', end=' ')
+
+    _set_epic_link(dest_issue, source_issue, conf, source_jira, dest_jira)
+    _set_status(dest_issue, source_issue, conf, dest_jira)
+
+    # Worklogs.
+    if conf.INCLUDE_WORKLOGS and source_issue.fields.worklog:
+        for worklog in source_issue.fields.worklog.worklogs:
+            dest_jira.add_worklog(dest_issue, None, worklog.timeSpentSeconds)
+
+    # Attachments.
+    if source_issue.fields.attachment:
+        try:
+            _add_attachments(dest_issue, dest_jira, source_issue.fields.attachment)
+        except JIRAError as e:
+            print('ERROR: attachment import failed with status',
+                    e.status_code, '...', end=' ')
+            dest_jira.add_comment(dest_issue, '*Failed to import attachments*')
+
+    # Subtasks.
+    if source_issue.fields.subtasks:
+        subtasks = [source_jira.issue(subtask.key) for subtask in
+                source_issue.fields.subtasks]
+        print('with', len(subtasks), 'subtasks ...', end=' ')
+        _make_dest_issues(source_jira, dest_jira, subtasks, conf, result, dest_issue, None)
+
+    # Comments.
+    if source_issue.fields.comment.comments:
+        _add_comments(dest_issue, dest_jira, source_issue.fields.comment.comments)
+
+    comment = 'Imported from *[{1}|{0}/browse/{1}]*'.format(
+            source_jira._options['server'], source_issue.key)
+    dest_jira.add_comment(dest_issue, comment)
+
+    if conf.ADD_COMMENT_TO_OLD_ISSUE:
+        comment = 'Exported to *[{1}|{0}/browse/{1}]*'.format(
+                dest_jira._options['server'], dest_issue.key)
+        source_jira.add_comment(source_issue, comment)
+
+    # Portfolio epics.
+    if portfolio_epics and _has_portfolio_epic_label(source_issue, conf):
+        _map_sub_epics(source_jira, dest_jira, source_issue, dest_issue, conf, result)
+
+    return dest_issue
+
+
+def _map_sub_epics(source_jira, dest_jira, source_issue, dest_issue, conf, result):
+    print('with sub-epics:')
+    # Get all linked sub-epics and import them recursively.
+    for linked_issue in source_issue.fields.issuelinks:
+        if linked_issue.type.name == conf.PORTFOLIO_EPIC_SUB_EPIC_SOURCE_LINK_NAME and hasattr(linked_issue, 'outwardIssue'):
+            sub_epic = linked_issue.outwardIssue
+            new_sub_epic = _map_issue(source_jira, dest_jira, sub_epic, conf, result, None, True)
+            dest_jira.create_issue_link(type=conf.PORTFOLIO_EPIC_SUB_EPIC_TARGET_LINK_NAME,
+                    inwardIssue=dest_issue.key,
+                    outwardIssue=new_sub_epic.key)
+            # TODO: add portfolio epic label to target
+    print('Sub-epics of', source_issue.key, 'done.')
+
+
+def _already_imported(conf, dest_jira, issue_key):
     if conf.CUSTOM_FIELD_FOR_SOURCE_JIRA_ISSUE_KEY:
         # TODO: make the ~ operator configurable as well
-        return target_jira.search_issues("'{}' ~ '{}'".format(
+        return dest_jira.search_issues("'{}' ~ '{}'".format(
             conf.CUSTOM_FIELD_FOR_SOURCE_JIRA_ISSUE_KEY[0], issue_key))
     return False
 
@@ -97,6 +122,26 @@ def _already_imported(conf, target_jira, issue_key):
 def _add_source_jira_issue_key(conf, fields, issue_key):
     if conf.CUSTOM_FIELD_FOR_SOURCE_JIRA_ISSUE_KEY:
         fields[conf.CUSTOM_FIELD_FOR_SOURCE_JIRA_ISSUE_KEY[1]] = issue_key
+
+
+def _map_versions(dest_jira, source_issue, fields, conf):
+    source_versions = getattr(source_issue.fields, 'fixVersions')
+    if source_versions is not None:
+        target_versions = []
+        for version in source_versions:
+            # We create the current version if it does not exist in the target JIRA project.
+            target_version = _get_target_version_by_name(dest_jira, conf, getattr(version, 'name'))
+            if target_version is None:
+                target_version = dest_jira.create_version(getattr(version, 'name'), conf.JIRA['project'])
+
+            target_versions.append({'id': getattr(target_version, 'id')})
+
+        # Support multiple versions per ticket.
+        fields['fixVersions'] = target_versions
+
+
+def _has_portfolio_epic_label(source_issue, conf):
+    return conf.PORTFOLIO_EPIC_LABEL in source_issue.fields.labels
 
 
 def _get_target_version_by_name(jira, conf, name):
@@ -115,7 +160,7 @@ def _get_target_version_by_name(jira, conf, name):
     return None
 
 
-def _get_new_issue_fields(fields, conf):
+def _get_dest_issue_fields(fields, conf):
     result = {}
     result['project'] = conf.JIRA['project']
     for name in ('summary', 'description', 'labels', 'environment'):
@@ -147,35 +192,40 @@ def _get_new_issue_fields(fields, conf):
                 result[targetname] = value
     return result
 
+
 _g_epic_map = {}
 
-def _set_epic_link(new_issue, old_issue, conf, source_jira, target_jira):
-    source_epic_key = getattr(old_issue.fields, conf.SOURCE_EPIC_LINK_FIELD_ID)
+def _set_epic_link(dest_issue, source_issue, conf, source_jira, dest_jira):
+    source_epic_key = getattr(source_issue.fields, conf.SOURCE_EPIC_LINK_FIELD_ID)
     if not source_epic_key:
         return
     global _g_epic_map
     if source_epic_key not in _g_epic_map:
-        target_epic = _already_imported(conf, target_jira, source_epic_key)
+        target_epic = _already_imported(conf, dest_jira, source_epic_key)
         if target_epic:
             print('epic {} has already been imported, skipping...'.format(source_epic_key), end=' ')
             target_epic = target_epic[0]
         else:
             print('importing epic {} ...'.format(source_epic_key), end=' ')
             source_epic = source_jira.issue(source_epic_key)
-            epic_fields = _get_new_issue_fields(source_epic.fields, conf)
+            epic_fields = _get_dest_issue_fields(source_epic.fields, conf)
             epic_fields[conf.TARGET_EPIC_NAME_FIELD_ID] = getattr(
                     source_epic.fields, conf.SOURCE_EPIC_NAME_FIELD_ID)
             _add_source_jira_issue_key(conf, epic_fields, source_epic_key)
-            target_epic = target_jira.create_issue(fields=epic_fields)
+            target_epic = dest_jira.create_issue(fields=epic_fields)
         _g_epic_map[source_epic_key] = target_epic
     target_epic = _g_epic_map[source_epic_key]
-    target_jira.add_issues_to_epic(target_epic.key, [new_issue.key])
+    dest_jira.add_issues_to_epic(target_epic.key, [dest_issue.key])
     print('linked to epic', target_epic.key, '...', end=' ')
 
 
-def _set_status(new_issue, old_issue, conf, target_jira):
-    issue_type = new_issue.fields.issuetype.name
-    status_name = old_issue.fields.status.name
+def _set_status(dest_issue, source_issue, conf, dest_jira):
+    # Do nothing if status transitions are disabled.
+    if not conf.STATUS_TRANSITIONS:
+        return
+
+    issue_type = dest_issue.fields.issuetype.name
+    status_name = source_issue.fields.status.name
 
     transitions = None
     transition_map = getattr(conf, "STATUS_TRANSITIONS_ISSUETYPE", None)
@@ -190,17 +240,17 @@ def _set_status(new_issue, old_issue, conf, target_jira):
     transitions = transition_map[status_name]
     if not transitions:
         return
-    # Allow single string and WithResolution values by converting them to a tuple
+    # Allow single string and WithResolution values by converting them to a tuple.
     if isinstance(transitions, str) or isinstance(transitions, conf.WithResolution):
         transitions = (transitions,)
 
     for transition_name in transitions:
         if isinstance(transition_name, conf.WithResolution):
-            resolution = conf.RESOLUTION_MAP[old_issue.fields.resolution.name]
-            target_jira.transition_issue(new_issue, transition_name.transition_name,
+            resolution = conf.RESOLUTION_MAP[source_issue.fields.resolution.name]
+            dest_jira.transition_issue(dest_issue, transition_name.transition_name,
                     fields={'resolution': {'name': resolution}})
         else:
-            target_jira.transition_issue(new_issue, transition_name)
+            dest_jira.transition_issue(dest_issue, transition_name)
 
 
 def _add_comments(issue, jira, comments):
