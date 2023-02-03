@@ -68,7 +68,8 @@ RESOLUTION_MAP = {
     'Done': 'Done',
 }
 
-# Note that transition names are different from status names
+# Note that transition names are different from status names.
+# Set STATUS_TRANSITIONS to None if you want to disable status transition mapping.
 STATUS_TRANSITIONS = {
     'Open': None,
     'Reopened': None,
@@ -97,6 +98,10 @@ STATUS_TRANSITIONS_ISSUETYPE = {
 
 INCLUDE_WORKLOGS = True
 ADD_COMMENT_TO_OLD_ISSUE = True
+
+PORTFOLIO_EPIC_LABEL = 'porfolio-epic'
+PORTFOLIO_EPIC_SUB_EPIC_SOURCE_LINK_NAME = 'sub-epic'
+PORTFOLIO_EPIC_SUB_EPIC_TARGET_LINK_NAME = 'sub-epic'
 
 CUSTOM_FIELD_FOR_SOURCE_JIRA_ISSUE_KEY = ('Text 1', 'customfield_10132')
 

@@ -82,6 +82,13 @@ to another with comments, attachments, epics and sub-tasks.
 
 Source JIRA server configuration is picked up from `jiraconfig.py`.
 
+There is special support for ["portfolio epics"](https://www.scaledagileframework.com/epic/),
+a SAFe concept. Run `export_import_issues_for_jql` with the `--portfolio-epics`
+flag to enable portfolio epic mode. In portfolio epic mode, the argument JQL
+must return only top-level portfolio epics and all the linked issues are
+recursively migrated along with them. See also configuration settings with
+`PORTFOLIO_EPIC` prefix below.
+
 The task needs special configuration in `exportimportconfig.py` (see sample in
 `exportimportconfig-sample.py`):
 
@@ -97,6 +104,9 @@ The task needs special configuration in `exportimportconfig.py` (see sample in
 * `SOURCE_EPIC_LINK_FIELD_ID`: ID of the epic field in source JIRA, find it by calling `fields`, look for *Epic Link*
 * `SOURCE_EPIC_NAME_FIELD_ID`: ID of the epic field in source JIRA, find it by calling `fields`, look for *Epic Name*
 * `TARGET_EPIC_NAME_FIELD_ID`: ID of the epic field in **target** JIRA, find it by changing configuration to use target JIRA and calling `fields`, look for *Epic Name*
+* `PORTFOLIO_EPIC_LABEL`: (porfolio epic mode) for an issue to be considered a porfolio epic, this label must be attached to it
+* `PORTFOLIO_EPIC_SUB_EPIC_SOURCE_LINK_NAME`: (porfolio epic mode) only issues that are linked to the portfolio epic with this link name are migrated
+* `PORTFOLIO_EPIC_SUB_EPIC_TARGET_LINK_NAME`: (porfolio epic mode) the link name to use in target JIRA to link issues to portfolio epics
 * `STATUS_TRANSITIONS`: map of source JIRA statuses to list of workflow transition names in target JIRA that result in equivalent status, `None` for no transition
 * `STATUS_TRANSITIONS_ISSUETYPE`: issuetype specific map of source JIRA statuses to list of workflow transition names in target JIRA that result in equivalent status, `None` for no transition. If an issuetype is not in this list, the default `STATUS_TRANSITIONS` are used.
 * `RESOLUTION_MAP`: map source JIRA resolutions to target resolutions, only used when a `WithResolution` transition is used in `STATUS_TRANSITIONS`
