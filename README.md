@@ -107,6 +107,9 @@ The task needs special configuration in `exportimportconfig.py` (see sample in
 * `PORTFOLIO_EPIC_LABEL`: (porfolio epic mode) for an issue to be considered a porfolio epic, this label must be attached to it
 * `PORTFOLIO_EPIC_SUB_EPIC_SOURCE_LINK_NAME`: (porfolio epic mode) only issues that are linked to the portfolio epic with this link name are migrated
 * `PORTFOLIO_EPIC_SUB_EPIC_TARGET_LINK_NAME`: (porfolio epic mode) the link name to use in target JIRA to link issues to portfolio epics
+* `PORTFOLIO_EPIC_SUB_EPIC_SOURCE_LINK_DIRECTION`: 'outwardIssue' or 'inwardIssue'. Choose which direction search is done
+* `PORTFOLIO_EPIC_SUB_EPIC_TARGET_LINK_SWAP`: 'True' or 'False' Optionally swap direction to destination, if it is logically opposite.
+
 * `STATUS_TRANSITIONS`: map of source JIRA statuses to list of workflow transition names in target JIRA that result in equivalent status, `None` for no transition
 * `STATUS_TRANSITIONS_ISSUETYPE`: issuetype specific map of source JIRA statuses to list of workflow transition names in target JIRA that result in equivalent status, `None` for no transition. If an issuetype is not in this list, the default `STATUS_TRANSITIONS` are used.
 * `RESOLUTION_MAP`: map source JIRA resolutions to target resolutions, only used when a `WithResolution` transition is used in `STATUS_TRANSITIONS`
