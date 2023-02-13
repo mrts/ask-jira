@@ -102,7 +102,8 @@ ADD_COMMENT_TO_OLD_ISSUE = True
 PORTFOLIO_EPIC_LABEL = 'porfolio-epic'
 PORTFOLIO_EPIC_SUB_EPIC_SOURCE_LINK_NAME = 'sub-epic'
 PORTFOLIO_EPIC_SUB_EPIC_TARGET_LINK_NAME = 'sub-epic'
-
+PORTFOLIO_EPIC_SUB_EPIC_SOURCE_LINK_DIRECTION = 'outwardIssue' # or inwardIssue
+PORTFOLIO_EPIC_SUB_EPIC_TARGET_LINK_SWAP = 'True'  # ...or False, swapping direction
 CUSTOM_FIELD_FOR_SOURCE_JIRA_ISSUE_KEY = ('Text 1', 'customfield_10132')
 
 CUSTOM_FIELD = ('customfield_11086', {'value': 'Custom value'})

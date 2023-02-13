@@ -101,12 +101,33 @@ def _map_sub_epics(source_jira, dest_jira, source_issue, dest_issue, conf, resul
     print('with sub-epics:')
     # Get all linked sub-epics and import them recursively.
     for linked_issue in source_issue.fields.issuelinks:
-        if linked_issue.type.name == conf.PORTFOLIO_EPIC_SUB_EPIC_SOURCE_LINK_NAME and hasattr(linked_issue, 'outwardIssue'):
-            sub_epic = linked_issue.outwardIssue
-            new_sub_epic = _map_issue(source_jira, dest_jira, sub_epic, conf, result, None, True)
+        if linked_issue.type.name == conf.PORTFOLIO_EPIC_SUB_EPIC_SOURCE_LINK_NAME and \
+            hasattr(linked_issue, conf.PORTFOLIO_EPIC_SUB_EPIC_SOURCE_LINK_DIRECTION):
+            if conf.PORTFOLIO_EPIC_SUB_EPIC_SOURCE_LINK_DIRECTION == "inwardIssue":
+                sub_epic = linked_issue.inwardIssue
+            else:
+                sub_epic = linked_issue.outwardIssue
+            # Test if sub_epic already exists. Use that or create a new
+            # Search always returns an iterator, but it may be empty
+            # It then throws StopIteration, instead of giving us issue
+            try:
+                new_sub_epic = next(_already_imported(conf, dest_jira, sub_epic))
+                print('Issue', sub_epic, 'has already been imported, link only...')
+            except StopIteration:
+                new_sub_epic = _map_issue(source_jira, dest_jira, sub_epic, conf, result, None, True)
+            # Always create link, no matter if it was existing issue or new
+            # If SWAP, change direction
+            # If searched outwardIssue, or if searched inward, but SWAP is true
+            inIssue  = dest_issue.key
+            outIssue = new_sub_epic.key
+            # If searched inwardIssue and no SWAP, or if searched outward, but SWAP is true
+            if  (conf.PORTFOLIO_EPIC_SUB_EPIC_SOURCE_LINK_DIRECTION == 'inwardIssue' and not conf.PORTFOLIO_EPIC_SUB_EPIC_SOURCE_LINK_SWAP ) or \
+                (conf.PORTFOLIO_EPIC_SUB_EPIC_SOURCE_LINK_DIRECTION == 'outwardIssue' and conf.PORTFOLIO_EPIC_SUB_EPIC_TARGET_LINK_SWAP):
+                outIssue = dest_issue.key
+                inIssue  = new_sub_epic.key
+            
             dest_jira.create_issue_link(type=conf.PORTFOLIO_EPIC_SUB_EPIC_TARGET_LINK_NAME,
-                    inwardIssue=dest_issue.key,
-                    outwardIssue=new_sub_epic.key)
+                    inwardIssue= inIssue, outwardIssue= outIssue )
             # TODO: add portfolio epic label to target
     print('Sub-epics of', source_issue.key, 'done.')
 
