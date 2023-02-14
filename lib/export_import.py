@@ -242,7 +242,7 @@ def _set_epic_link(dest_issue, source_issue, conf, source_jira, dest_jira):
 
 def _set_status(dest_issue, source_issue, conf, dest_jira):
     # Do nothing if status transitions are disabled.
-    if not conf.STATUS_TRANSITIONS:
+    if not (conf.STATUS_TRANSITIONS or conf.STATUS_TRANSITIONS_ISSUETYPE):
         return
 
     issue_type = dest_issue.fields.issuetype.name
@@ -258,7 +258,7 @@ def _set_status(dest_issue, source_issue, conf, dest_jira):
     if not transition_map:
         transition_map = conf.STATUS_TRANSITIONS
 
-    transitions = transition_map[status_name]
+    transitions = transition_map.get(status_name,None)
     if not transitions:
         return
     # Allow single string and WithResolution values by converting them to a tuple.
