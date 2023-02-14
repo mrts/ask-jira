@@ -119,3 +119,11 @@ CUSTOM_FIELD_MAP = {
         'customfield_10402': 'customfield_11312', # Expected Behavior
 }
 
+# Dict of tuples where tuple is ( fieldname, dict of valuemappings)
+# Works for fields that have {'value': x } structure, like single select lists
+CUSTOM_FIELD_MAP_MAPPED = {
+    'customfield_11486': ('customfield_10108', {
+        'Sourcevalue': 'Destinationvalue'
+    })
+}
+

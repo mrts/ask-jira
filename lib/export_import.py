@@ -203,14 +203,24 @@ def _get_dest_issue_fields(fields, conf):
                             '%(fieldname)s_MAP and DEFAULT_%(fieldname)s is not set' %
                             {'value': value, 'fieldname': fieldname.upper()})
             result[fieldname] = {'name': mapped_value}
+    # Single field
     if conf.CUSTOM_FIELD:
         result[conf.CUSTOM_FIELD[0]] = conf.CUSTOM_FIELD[1]
+    # Map of simple text/number fields
     if conf.CUSTOM_FIELD_MAP:
         for sourcename in conf.CUSTOM_FIELD_MAP.keys():
             targetname = conf.CUSTOM_FIELD_MAP[sourcename]
             value = getattr(fields, sourcename, None)
             if value:
                 result[targetname] = value
+    # Map of tuples with mapped values on both sides (select lists. No multiselect)
+    if conf.CUSTOM_FIELD_MAP_MAPPED:
+        for sourcename in conf.CUSTOM_FIELD_MAP_MAPPED.keys():
+            targetname = conf.CUSTOM_FIELD_MAP_MAPPED[sourcename][0]
+            sourcevalue = getattr(getattr(fields, sourcename, None),'value',None)
+            value = conf.CUSTOM_FIELD_MAP_MAPPED[sourcename][1].get(sourcevalue,None)
+            if value:
+                result[targetname] = {'value': value }                
     return result
 
 
