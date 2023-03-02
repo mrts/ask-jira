@@ -217,10 +217,20 @@ def _get_dest_issue_fields(fields, conf):
     if conf.CUSTOM_FIELD_MAP_MAPPED:
         for sourcename in conf.CUSTOM_FIELD_MAP_MAPPED.keys():
             targetname = conf.CUSTOM_FIELD_MAP_MAPPED[sourcename][0]
-            sourcevalue = getattr(getattr(fields, sourcename, None),'value',None)
+            # Get raw attribute value
+            sourceattr = getattr(fields, sourcename, None)
+            # Try to figure out what it is
+            if isinstance(sourceattr,dict):
+                sourcevalue = getattr(getattr(fields, sourcename, None),'value',None) # is Dict with value
+                if not sourcevalue:
+                    sourcevalue = getattr(getattr(fields, sourcename, None),'name',None) # is Dict with name
+            elif isinstance(sourceattr,list) and len(sourceattr) == 1:
+                    sourcevalue = sourceattr[0] # Take first element if array length is 1
+            else:
+                sourcevalue = sourceattr # take it as is
             value = conf.CUSTOM_FIELD_MAP_MAPPED[sourcename][1].get(sourcevalue,None)
             if value:
-                result[targetname] = {'value': value }                
+                result[targetname] = value               
     return result
 
 
