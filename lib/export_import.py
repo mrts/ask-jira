@@ -47,7 +47,8 @@ def _map_issue(source_jira, dest_jira, source_issue, conf, result, parent, portf
     if parent:
         fields['parent'] = {'key': parent.key}
     _add_source_jira_issue_key(conf, fields, source_issue.key)
-    _map_versions(dest_jira, source_issue, fields, conf)
+    _map_versions(dest_jira, source_issue, fields, conf, 'versions')
+    _map_versions(dest_jira, source_issue, fields, conf, 'fixVersions')
     _map_components(dest_jira, source_issue, fields, conf)
 
     dest_issue = dest_jira.create_issue(fields=fields)
@@ -146,8 +147,8 @@ def _add_source_jira_issue_key(conf, fields, issue_key):
         fields[conf.CUSTOM_FIELD_FOR_SOURCE_JIRA_ISSUE_KEY[1]] = issue_key
 
 
-def _map_versions(dest_jira, source_issue, fields, conf):
-    source_versions = getattr(source_issue.fields, 'fixVersions')
+def _map_versions(dest_jira, source_issue, fields, conf, versionField):
+    source_versions = getattr(source_issue.fields, versionField)
     if source_versions is not None:
         target_versions = []
         for version in source_versions:
@@ -159,7 +160,7 @@ def _map_versions(dest_jira, source_issue, fields, conf):
             target_versions.append({'id': getattr(target_version, 'id')})
 
         # Support multiple versions per ticket.
-        fields['fixVersions'] = target_versions
+        fields[versionField] = target_versions
 
 def _map_components(dest_jira, source_issue, fields, conf):
     source_components = getattr(source_issue.fields, 'components')
