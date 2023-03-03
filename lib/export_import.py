@@ -48,6 +48,7 @@ def _map_issue(source_jira, dest_jira, source_issue, conf, result, parent, portf
         fields['parent'] = {'key': parent.key}
     _add_source_jira_issue_key(conf, fields, source_issue.key)
     _map_versions(dest_jira, source_issue, fields, conf)
+    _map_components(dest_jira, source_issue, fields, conf)
 
     dest_issue = dest_jira.create_issue(fields=fields)
     if not parent:
@@ -159,6 +160,21 @@ def _map_versions(dest_jira, source_issue, fields, conf):
 
         # Support multiple versions per ticket.
         fields['fixVersions'] = target_versions
+
+def _map_components(dest_jira, source_issue, fields, conf):
+    source_components = getattr(source_issue.fields, 'components')
+    components_map = getattr(conf, 'COMPONENTS_MAP')
+    if source_components is not None:
+        target_components = []
+        for component in source_components: 
+            target_component = getattr(component, 'name')           
+            # We expect that all mapped components are created before
+            # drop components that are not mapped
+            if target_component in components_map:
+                target_component = components_map[target_component]
+                target_components.append({ 'name' : target_component })
+        # Support multiple components per ticket.
+        fields['components'] = target_components        
 
 
 def _has_portfolio_epic_label(source_issue, conf):
