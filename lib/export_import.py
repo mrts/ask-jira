@@ -49,6 +49,7 @@ def _map_issue(source_jira, dest_jira, source_issue, conf, result, parent, portf
     _map_versions(dest_jira, source_issue, fields, conf, 'versions')
     _map_versions(dest_jira, source_issue, fields, conf, 'fixVersions')
     _map_components(dest_jira, source_issue, fields, conf)
+    _map_epic_name(source_issue, fields, conf)
 
     dest_issue = dest_jira.create_issue(fields=fields)
     if not parent:
@@ -190,6 +191,17 @@ def _map_remote_links(source_jira, dest_jira, source_issue, dest_issue):
             }
         )
 
+def _map_epic_name(source_issue, fields, conf):
+    # Map Epic Name when dest issuetype only if dest issuetype is Epic
+    if fields['issuetype']['name'] == 'Epic':
+        # If we have Epic name in source, use that
+        if getattr(source_issue.fields,conf.SOURCE_EPIC_NAME_FIELD_ID):
+            fields[conf.TARGET_EPIC_NAME_FIELD_ID] = getattr(source_issue.fields,conf.SOURCE_EPIC_NAME_FIELD_ID)
+        # If not, "invent" epic name by taking first 30 chars from summary
+        else:
+            fields[conf.TARGET_EPIC_NAME_FIELD_ID] = fields['summary'][:30]
+
+    
 def _has_portfolio_epic_label(source_issue, conf):
     return conf.PORTFOLIO_EPIC_LABEL in source_issue.fields.labels
 
