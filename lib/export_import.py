@@ -6,7 +6,6 @@ from io import BytesIO
 from jira.client import JIRA
 from jira.exceptions import JIRAError
 
-
 def export_import_issues(source_jira, conf, query, portfolio_epics=False):
     dest_jira = JIRA({'server': conf.JIRA['server']},
                 basic_auth=(conf.JIRA['user'], conf.JIRA['password']))
@@ -237,7 +236,7 @@ def _get_dest_issue_fields(fields, conf):
             # Get raw attribute value
             sourceattr = getattr(fields, sourcename, None)
             # Try to figure out what it is
-            if isinstance(sourceattr,dict):
+            if sourceattr and hasattr(sourceattr,'value'):
                 sourcevalue = getattr(getattr(fields, sourcename, None),'value',None) # is Dict with value
                 if not sourcevalue:
                     sourcevalue = getattr(getattr(fields, sourcename, None),'name',None) # is Dict with name
