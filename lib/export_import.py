@@ -160,7 +160,9 @@ def _map_versions(dest_jira, source_issue, fields, conf, versionField):
             target_versions.append({'id': getattr(target_version, 'id')})
 
         # Support multiple versions per ticket.
-        fields[versionField] = target_versions
+        # Set only if list is not empty
+        if len(target_versions) > 0:
+            fields[versionField] = target_versions
 
 def _map_components(dest_jira, source_issue, fields, conf):
     source_components = getattr(source_issue.fields, 'components')
