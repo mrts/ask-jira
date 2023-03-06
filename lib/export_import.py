@@ -56,6 +56,7 @@ def _map_issue(source_jira, dest_jira, source_issue, conf, result, parent, portf
 
     _set_epic_link(dest_issue, source_issue, conf, source_jira, dest_jira)
     _set_status(dest_issue, source_issue, conf, dest_jira)
+    _map_remote_links(source_jira, dest_jira, source_issue, dest_issue)
 
     # Worklogs.
     if conf.INCLUDE_WORKLOGS and source_issue.fields.worklog:
@@ -176,6 +177,16 @@ def _map_components(dest_jira, source_issue, fields, conf):
         # Support multiple components per ticket.
         fields['components'] = target_components        
 
+def _map_remote_links(source_jira, dest_jira, source_issue, dest_issue):
+    for remote_link in source_jira.remote_links(source_issue.key):
+        dest_jira.add_remote_link(
+            dest_issue.key,
+            relationship = remote_link.relationship,
+            destination = {
+                'url' : remote_link.object.url,
+                'title' : remote_link.object.title
+            }
+        )
 
 def _has_portfolio_epic_label(source_issue, conf):
     return conf.PORTFOLIO_EPIC_LABEL in source_issue.fields.labels
