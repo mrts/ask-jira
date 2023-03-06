@@ -304,9 +304,18 @@ def _set_status(dest_issue, source_issue, conf, dest_jira):
 
     for transition_name in transitions:
         if isinstance(transition_name, conf.WithResolution):
-            resolution = conf.RESOLUTION_MAP[source_issue.fields.resolution.name]
-            dest_jira.transition_issue(dest_issue, transition_name.transition_name,
-                    fields={'resolution': {'name': resolution}})
+            # Try mapping resolution, use default for sorce, if no resolution is available
+
+            source_resolution = getattr(source_issue.fields.resolution, 'name', conf.DEFAULT_RESOLUTION)            
+            fields={'resolution': {'name': conf.RESOLUTION_MAP[source_resolution]}}
+            try:
+                dest_jira.transition_issue(dest_issue, transition_name.transition_name,
+                    fields=fields)
+            except JIRAError as e:
+                # if logging work is needed and we have default value
+                if 'worklog_timeLogged' in e.text and hasattr(conf, 'DEFAULT_WORKLOG_TIME_LOGGED'):                    
+                    dest_jira.transition_issue(dest_issue, transition_name.transition_name,
+                        fields=fields, worklog = conf.DEFAULT_WORKLOG_TIME_LOGGED)                    
         else:
             dest_jira.transition_issue(dest_issue, transition_name)
 
