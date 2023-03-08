@@ -184,7 +184,7 @@ def _map_remote_links(source_jira, dest_jira, source_issue, dest_issue):
     for remote_link in source_jira.remote_links(source_issue.key):
         dest_jira.add_remote_link(
             dest_issue.key,
-            relationship = remote_link.relationship,
+            relationship = getattr(remote_link, 'relationship', None),
             destination = {
                 'url' : remote_link.object.url,
                 'title' : remote_link.object.title
