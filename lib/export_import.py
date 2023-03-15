@@ -265,8 +265,8 @@ def _get_dest_issue_fields(fields, conf):
                 sourcevalue = getattr(getattr(fields, sourcename, None),'value',None) # is Dict with value
                 if not sourcevalue:
                     sourcevalue = getattr(getattr(fields, sourcename, None),'name',None) # is Dict with name
-            elif isinstance(sourceattr,list) and len(sourceattr) == 1:
-                    sourcevalue = sourceattr[0] # Take first element if array length is 1
+            elif isinstance(sourceattr,list):
+                    sourcevalue = sourceattr[0]
             else:
                 sourcevalue = sourceattr # take it as is
             value = conf.CUSTOM_FIELD_MAP_MAPPED[sourcename][1].get(sourcevalue,None)
