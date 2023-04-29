@@ -115,6 +115,7 @@ The task needs special configuration in `exportimportconfig.py` (see sample in
 * `ADD_COMMENT_TO_OLD_ISSUE`: if `True`, add comment to source JIRA issue that it was exported to new issue in target JIRA with issue link
 * `CUSTOM_FIELD`: a single custom field that you can set to a default value for all issues (set to `None` if not needed)
 * `CUSTOM_FIELD_MAP`: map source JIRA fields to target JIRA fields. This can also be used for system fields that are not mapped out of the box, such as 'environment'
+* `CUSTOM_FIELD_MAP_MAPPED`: mapped values of customfields for select lists. With these maps single select lists can be exported and imported, values will be mappes similarly to other mapped values. 
 
 Note that epics and sub-tasks should be excluded from the source JIRA query as
 they are automatically imported via the parent task. The recommended
