@@ -6,7 +6,6 @@ from io import BytesIO
 from jira.client import JIRA
 from jira.exceptions import JIRAError
 
-
 def export_import_issues(source_jira, conf, query, portfolio_epics=False):
     dest_jira = JIRA({'server': conf.JIRA['server']},
                 basic_auth=(conf.JIRA['user'], conf.JIRA['password']))
@@ -47,7 +46,10 @@ def _map_issue(source_jira, dest_jira, source_issue, conf, result, parent, portf
     if parent:
         fields['parent'] = {'key': parent.key}
     _add_source_jira_issue_key(conf, fields, source_issue.key)
-    _map_versions(dest_jira, source_issue, fields, conf)
+    _map_versions(dest_jira, source_issue, fields, conf, 'versions')
+    _map_versions(dest_jira, source_issue, fields, conf, 'fixVersions')
+    _map_components(dest_jira, source_issue, fields, conf)
+    _map_epic_name(source_issue, fields, conf)
 
     dest_issue = dest_jira.create_issue(fields=fields)
     if not parent:
@@ -55,6 +57,7 @@ def _map_issue(source_jira, dest_jira, source_issue, conf, result, parent, portf
 
     _set_epic_link(dest_issue, source_issue, conf, source_jira, dest_jira)
     _set_status(dest_issue, source_issue, conf, dest_jira)
+    _map_remote_links(source_jira, dest_jira, source_issue, dest_issue)
 
     # Worklogs.
     if conf.INCLUDE_WORKLOGS and source_issue.fields.worklog:
@@ -145,8 +148,8 @@ def _add_source_jira_issue_key(conf, fields, issue_key):
         fields[conf.CUSTOM_FIELD_FOR_SOURCE_JIRA_ISSUE_KEY[1]] = issue_key
 
 
-def _map_versions(dest_jira, source_issue, fields, conf):
-    source_versions = getattr(source_issue.fields, 'fixVersions')
+def _map_versions(dest_jira, source_issue, fields, conf, versionField):
+    source_versions = getattr(source_issue.fields, versionField)
     if source_versions is not None:
         target_versions = []
         for version in source_versions:
@@ -158,9 +161,47 @@ def _map_versions(dest_jira, source_issue, fields, conf):
             target_versions.append({'id': getattr(target_version, 'id')})
 
         # Support multiple versions per ticket.
-        fields['fixVersions'] = target_versions
+        # Set only if list is not empty
+        if len(target_versions) > 0:
+            fields[versionField] = target_versions
 
+def _map_components(dest_jira, source_issue, fields, conf):
+    source_components = getattr(source_issue.fields, 'components')
+    components_map = getattr(conf, 'COMPONENTS_MAP')
+    if source_components is not None:
+        target_components = []
+        for component in source_components: 
+            target_component = getattr(component, 'name')           
+            # We expect that all mapped components are created before
+            # drop components that are not mapped
+            if target_component in components_map:
+                target_component = components_map[target_component]
+                target_components.append({ 'name' : target_component })
+        # Support multiple components per ticket.
+        fields['components'] = target_components        
 
+def _map_remote_links(source_jira, dest_jira, source_issue, dest_issue):
+    for remote_link in source_jira.remote_links(source_issue.key):
+        dest_jira.add_remote_link(
+            dest_issue.key,
+            relationship = getattr(remote_link, 'relationship', None),
+            destination = {
+                'url' : remote_link.object.url,
+                'title' : remote_link.object.title
+            }
+        )
+
+def _map_epic_name(source_issue, fields, conf):
+    # Map Epic Name when dest issuetype only if dest issuetype is Epic
+    if fields['issuetype']['name'] == 'Epic':
+        # If we have Epic name in source, use that
+        if getattr(source_issue.fields,conf.SOURCE_EPIC_NAME_FIELD_ID):
+            fields[conf.TARGET_EPIC_NAME_FIELD_ID] = getattr(source_issue.fields,conf.SOURCE_EPIC_NAME_FIELD_ID)
+        # If not, "invent" epic name by taking first 30 chars from summary
+        else:
+            fields[conf.TARGET_EPIC_NAME_FIELD_ID] = fields['summary'][:30]
+
+    
 def _has_portfolio_epic_label(source_issue, conf):
     return conf.PORTFOLIO_EPIC_LABEL in source_issue.fields.labels
 
@@ -217,10 +258,20 @@ def _get_dest_issue_fields(fields, conf):
     if conf.CUSTOM_FIELD_MAP_MAPPED:
         for sourcename in conf.CUSTOM_FIELD_MAP_MAPPED.keys():
             targetname = conf.CUSTOM_FIELD_MAP_MAPPED[sourcename][0]
-            sourcevalue = getattr(getattr(fields, sourcename, None),'value',None)
+            # Get raw attribute value
+            sourceattr = getattr(fields, sourcename, None)
+            # Try to figure out what it is
+            if sourceattr and hasattr(sourceattr,'value'):
+                sourcevalue = getattr(getattr(fields, sourcename, None),'value',None) # is Dict with value
+                if not sourcevalue:
+                    sourcevalue = getattr(getattr(fields, sourcename, None),'name',None) # is Dict with name
+            elif isinstance(sourceattr,list):
+                    sourcevalue = sourceattr[0]
+            else:
+                sourcevalue = sourceattr # take it as is
             value = conf.CUSTOM_FIELD_MAP_MAPPED[sourcename][1].get(sourcevalue,None)
             if value:
-                result[targetname] = {'value': value }                
+                result[targetname] = value               
     return result
 
 
@@ -277,9 +328,18 @@ def _set_status(dest_issue, source_issue, conf, dest_jira):
 
     for transition_name in transitions:
         if isinstance(transition_name, conf.WithResolution):
-            resolution = conf.RESOLUTION_MAP[source_issue.fields.resolution.name]
-            dest_jira.transition_issue(dest_issue, transition_name.transition_name,
-                    fields={'resolution': {'name': resolution}})
+            # Try mapping resolution, use default for sorce, if no resolution is available
+
+            source_resolution = getattr(source_issue.fields.resolution, 'name', conf.DEFAULT_RESOLUTION)            
+            fields={'resolution': {'name': conf.RESOLUTION_MAP[source_resolution]}}
+            try:
+                dest_jira.transition_issue(dest_issue, transition_name.transition_name,
+                    fields=fields)
+            except JIRAError as e:
+                # if logging work is needed and we have default value
+                if 'worklog_timeLogged' in e.text and hasattr(conf, 'DEFAULT_WORKLOG_TIME_LOGGED'):                    
+                    dest_jira.transition_issue(dest_issue, transition_name.transition_name,
+                        fields=fields, worklog = conf.DEFAULT_WORKLOG_TIME_LOGGED)                    
         else:
             dest_jira.transition_issue(dest_issue, transition_name)
 
