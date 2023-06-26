@@ -4,6 +4,7 @@ import re
 import os
 import sys
 import datetime
+from datetime import timezone
 from functools import total_ordering
 
 import dateutil.parser
@@ -53,11 +54,10 @@ def import_worklogs(jira, jira_user, worklogconfig, calendar_name, from_day, to_
                 event['summary'].startswith(prefix_filter)]
     for event in events:
         try:
-            gcal_worklog = Worklog.from_gcal(event)
+            gcal_worklog = Worklog.from_gcal(event, worklogconfig.JIRA_TIMEZONE)
             jira_worklogs = [Worklog.from_jira(w)
                     for w in jira.worklogs(gcal_worklog.issue)
-                    if w.author.key == jira_user]
-            # breakpoint()
+                    if w.author.name == jira_user]
             if (jira_worklogs and gcal_worklog in jira_worklogs):
                 jira_worklog = next(w for w in jira_worklogs if w == gcal_worklog)
                 if gcal_worklog.duration != jira_worklog.duration:
@@ -69,15 +69,9 @@ def import_worklogs(jira, jira_user, worklogconfig, calendar_name, from_day, to_
                       'already logged for', gcal_worklog.issue)
             else:
                 print('Logging', gcal_worklog.duration, 'hours starting', gcal_worklog.start, 'for', gcal_worklog.issue)
-                started = gcal_worklog.start
-                # Dates in JIRA use JIRA server timezone, tzinfo is ignored, hence manual offset calculation is required
-                # if timezone support is required in Jira.
-                if worklogconfig.JIRA_TIMEZONE:
-                    jira_tz = pytz.timezone(worklogconfig.JIRA_TIMEZONE)
-                    started -= jira_tz.utcoffset(gcal_worklog.start.replace(tzinfo=None))
                 jira.add_worklog(issue=gcal_worklog.issue,
                                  timeSpentSeconds=gcal_worklog.duration.seconds,
-                                 started=started,
+                                 started=gcal_worklog.start,
                                  comment=gcal_worklog.comment)
                 durations.append(gcal_worklog.duration)
         except WorklogParseError as e:
@@ -95,7 +89,7 @@ JIRA_ISSUE_REGEX = re.compile('[A-Z\d]+-\d+')
 class Worklog(object):
 
     @staticmethod
-    def from_gcal(event):
+    def from_gcal(event, jira_timezone):
         start = _parse_iso_date(event['start'].get('dateTime'))
         end = _parse_iso_date(event['end'].get('dateTime'))
         duration = end - start
@@ -106,6 +100,19 @@ class Worklog(object):
             raise WorklogParseError("'%s' is not a JIRA issue ID" %
                                     issue.encode('utf-8'))
         comment = summary[1].strip() if len(summary) > 1 else ''
+
+        # Dates in JIRA use JIRA server timezone, tzinfo is ignored, hence manual offset calculation is required
+        # if timezone support is required in Jira.
+        # What's worse, daylight saving time is not taken into account in Jira,
+        # see https://jira.atlassian.com/browse/JRASERVER-25855, so it has to
+        # be manually subtracted.
+        if jira_timezone:
+            jira_tz = pytz.timezone(jira_timezone)
+            start_localized = jira_tz.localize(start.replace(tzinfo=None))
+            start = start_localized.astimezone(timezone.utc)
+            if start_localized.dst():
+                start -= datetime.timedelta(hours=1)
+
         return Worklog(start, duration, issue, comment)
 
     @staticmethod
