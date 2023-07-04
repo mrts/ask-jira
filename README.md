@@ -134,6 +134,13 @@ Full example:
         AND issuetype not in subTaskIssueTypes()
         AND issuetype != Epic'
 
+### Notes/Bugs on export import
+This feature currently has problems migrating all stuff recursively. So don't try. But perfect result is still possible with this procedure:
+* First import Epics (Features) only, without any extra parameters
+* Next, import stories/tasks (the stuff below Epic). This will automatically include sub-tasks and it will link to Epics that already are there
+* Next, import whatever level is on top of Epic (portfolio) and use `--portfolio-epics`. This will import portfolio epics and link them to Epics (and also migrates any sub-tasks that belong to portfolio level)
+* If there are still levels on top of portfolio epic, continue with same procedure, going up one level at time
+
 ## Importing worklogs from Google Calendar
 
 The `import_worklogs_from_google_calendar` task helps filling JIRA time reports
