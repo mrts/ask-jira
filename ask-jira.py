@@ -112,8 +112,7 @@ import_worklogs_from_google_calendar.argparser = _import_worklogs_argument_parse
 def _main():
     command_name, command = _get_command()
     args = _parse_command_specific_arguments(command_name, command)
-    jira = JIRA({'server': conf.JIRA['server']}, # add 'verify': False if HTTPS cert is untrusted
-                basic_auth=(conf.JIRA['user'], conf.JIRA['password']))
+    jira = _configure_jira()
     command(jira, args)
 
 
@@ -159,6 +158,16 @@ def _parse_command_specific_arguments(command_name, command):
     parser.add_argument("command", help=command_name)
     command_argparser = command.argparser(parser)
     return command_argparser.parse_args()
+
+def _configure_jira():
+    # Add 'verify': False if HTTPS cert is untrusted.
+    options = {'server': conf.JIRA['server']}
+    if 'password' in conf.JIRA:
+        return JIRA(options, basic_auth=(conf.JIRA['user'], conf.JIRA['password']))
+    elif 'access-token' in conf.JIRA:
+        return JIRA(options, token_auth=conf.JIRA['access-token'])
+    else:
+        raise RuntimeError("Configuration does not contain either password or access-token.")
 
 
 if __name__ == "__main__":
