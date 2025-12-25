@@ -12,6 +12,7 @@ from lib import timetracking
 from lib import subissues
 from lib import export_import
 from lib import google_calendar
+from lib import csv_import
 from utils.smart_argparse_formatter import SmartFormatter
 
 import jiraconfig as conf
@@ -84,6 +85,22 @@ def export_import_issues_for_jql(jira, args):
         print('Successfully imported', exported_issues)
 
 export_import_issues_for_jql.argparser = _make_jql_and_optional_portfolio_epics_argument_parser
+
+
+def import_worklogs_from_csv(jira, args):
+    """Import worklog entries from CSV file
+    to corresponding JIRA tasks"""
+    import worklogconfig
+    hours = csv_import.import_worklogs(jira, conf.JIRA['user'],
+            worklogconfig, args.csvfile)
+    print('Logged', hours, 'hours')
+
+def _import_worklogs_from_csv_argument_parser(parser):
+    parser.add_argument("csvfile", help="the CSV file name to import "
+            "worklogs from")
+    return parser
+
+import_worklogs_from_csv.argparser = _import_worklogs_from_csv_argument_parser
 
 
 def import_worklogs_from_google_calendar(jira, args):
