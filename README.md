@@ -107,14 +107,19 @@ The task needs special configuration in `exportimportconfig.py` (see sample in
 * `PORTFOLIO_EPIC_LABEL`: (porfolio epic mode) for an issue to be considered a porfolio epic, this label must be attached to it
 * `PORTFOLIO_EPIC_SUB_EPIC_SOURCE_LINK_NAME`: (porfolio epic mode) only issues that are linked to the portfolio epic with this link name are migrated
 * `PORTFOLIO_EPIC_SUB_EPIC_TARGET_LINK_NAME`: (porfolio epic mode) the link name to use in target JIRA to link issues to portfolio epics
+* `PORTFOLIO_EPIC_SUB_EPIC_SOURCE_LINK_DIRECTION`: 'outwardIssue' or 'inwardIssue'. Choose which direction search is done
+* `PORTFOLIO_EPIC_SUB_EPIC_TARGET_LINK_SWAP`: 'True' or 'False' Optionally swap direction to destination, if it is logically opposite.
+
 * `STATUS_TRANSITIONS`: map of source JIRA statuses to list of workflow transition names in target JIRA that result in equivalent status, `None` for no transition
 * `STATUS_TRANSITIONS_ISSUETYPE`: issuetype specific map of source JIRA statuses to list of workflow transition names in target JIRA that result in equivalent status, `None` for no transition. If an issuetype is not in this list, the default `STATUS_TRANSITIONS` are used.
 * `RESOLUTION_MAP`: map source JIRA resolutions to target resolutions, only used when a `WithResolution` transition is used in `STATUS_TRANSITIONS`
+* `DEFAULT_RESOLUTION`: if no resolution in source, use this value (sometimes it may not exist, but is required for dest)
 * `CUSTOM_FIELD_FOR_SOURCE_JIRA_ISSUE_KEY`: custom field in target JIRA for saving the source JIRA issue key, **specifying this avoids duplicate imports**, can be `None`
 * `INCLUDE_WORKLOGS`: if `True`, add worklogs from source JIRA issue to the new issue in target JIRA
 * `ADD_COMMENT_TO_OLD_ISSUE`: if `True`, add comment to source JIRA issue that it was exported to new issue in target JIRA with issue link
 * `CUSTOM_FIELD`: a single custom field that you can set to a default value for all issues (set to `None` if not needed)
 * `CUSTOM_FIELD_MAP`: map source JIRA fields to target JIRA fields. This can also be used for system fields that are not mapped out of the box, such as 'environment'
+* `CUSTOM_FIELD_MAP_MAPPED`: mapped values of customfields for select lists. With these maps single select lists can be exported and imported, values will be mappes similarly to other mapped values. 
 
 Note that epics and sub-tasks should be excluded from the source JIRA query as
 they are automatically imported via the parent task. The recommended
@@ -128,6 +133,13 @@ Full example:
         AND status not in (Closed, Done, Fixed, Resolved)
         AND issuetype not in subTaskIssueTypes()
         AND issuetype != Epic'
+
+### Notes/Bugs on export import
+This feature currently has problems migrating all stuff recursively. So don't try. But perfect result is still possible with this procedure:
+* First import Epics (Features) only, without any extra parameters
+* Next, import stories/tasks (the stuff below Epic). This will automatically include sub-tasks and it will link to Epics that already are there
+* Next, import whatever level is on top of Epic (portfolio) and use `--portfolio-epics`. This will import portfolio epics and link them to Epics (and also migrates any sub-tasks that belong to portfolio level)
+* If there are still levels on top of portfolio epic, continue with same procedure, going up one level at time
 
 ## Importing worklogs from Google Calendar
 
