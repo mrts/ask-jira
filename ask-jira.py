@@ -6,12 +6,12 @@ import sys
 import pprint
 import argparse
 import inspect
-from jira.client import JIRA
 
 from lib import timetracking
 from lib import subissues
 from lib import export_import
 from lib import google_calendar
+from lib.jira_auth import create_jira_client
 from utils.smart_argparse_formatter import SmartFormatter
 
 import jiraconfig as conf
@@ -160,14 +160,7 @@ def _parse_command_specific_arguments(command_name, command):
     return command_argparser.parse_args()
 
 def _configure_jira():
-    # Add 'verify': False if HTTPS cert is untrusted.
-    options = {'server': conf.JIRA['server']}
-    if 'password' in conf.JIRA:
-        return JIRA(options, basic_auth=(conf.JIRA['user'], conf.JIRA['password']))
-    elif 'access-token' in conf.JIRA:
-        return JIRA(options, token_auth=conf.JIRA['access-token'])
-    else:
-        raise RuntimeError("Configuration does not contain either password or access-token.")
+    return create_jira_client(conf.JIRA)
 
 
 if __name__ == "__main__":

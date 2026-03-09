@@ -3,13 +3,13 @@ from __future__ import unicode_literals
 
 import unicodedata
 from io import BytesIO
-from jira.client import JIRA
 from jira.exceptions import JIRAError
+
+from lib.jira_auth import create_jira_client
 
 
 def export_import_issues(source_jira, conf, query, portfolio_epics=False):
-    dest_jira = JIRA({'server': conf.JIRA['server']},
-                basic_auth=(conf.JIRA['user'], conf.JIRA['password']))
+    dest_jira = create_jira_client(conf.JIRA)
     source_issues = source_jira.search_issues(query, maxResults=False)
     if not source_issues:
         print('No issues found for query', query, 'exiting')

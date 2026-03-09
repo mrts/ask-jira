@@ -40,6 +40,35 @@ Features:
 
 JIRA server configuration is picked up from `jiraconfig.py`.
 
+## Authentication
+
+The app supports these Jira authentication modes:
+
+* Basic authentication with top-level `user` and `password`
+* Jira personal access token authentication with top-level `access-token`
+* explicit `auth` blocks with `type` set to `basic`, `jira_token`, or `cookie_session`
+
+If your browser login uses SSO and you already have a working Jira browser
+session, the simplest API authentication option is often an exported browser
+cookie JAR:
+
+    JIRA = {
+        "server": "https://example.com/jira/",
+        "auth": {
+            "type": "cookie_session",
+        },
+        "cookie_file": "~/Downloads/jira-cookies.json",
+    }
+
+The cookie file may be any of these:
+
+* JSON object mapping cookie names to values
+* browser-extension JSON export with cookie entries that include `name` and `value`
+* Netscape `cookies.txt` export
+
+Only export cookies for the Jira domain, and expect to refresh them when the
+SSO session expires.
+
 ## Usage
 
 Run the command with
@@ -81,6 +110,9 @@ The `export_import_issues_for_jql` task exports issues from one JIRA instance
 to another with comments, attachments, epics and sub-tasks.
 
 Source JIRA server configuration is picked up from `jiraconfig.py`.
+
+Target Jira authentication in `exportimportconfig.py` uses the same
+configuration format, including `auth = {"type": "cookie_session"}`.
 
 There is special support for ["portfolio epics"](https://www.scaledagileframework.com/epic/),
 a SAFe concept. Run `export_import_issues_for_jql` with the `--portfolio-epics`

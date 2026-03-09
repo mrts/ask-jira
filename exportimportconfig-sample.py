@@ -5,6 +5,11 @@ JIRA = {
     'user': 'user2',
     'password': 'password2',
     'project': 'PROJECTKEY',
+    # Or reuse a browser-exported session:
+    # 'auth': {
+    #     'type': 'cookie_session',
+    # },
+    # 'cookie_file': '~/Downloads/jira-cookies.json',
 }
 
 PRIORITY_MAP = {
@@ -117,4 +122,3 @@ CUSTOM_FIELD_MAP = {
         'customfield_10401': 'customfield_11311', # Current Behavior
         'customfield_10402': 'customfield_11312', # Expected Behavior
 }
-
